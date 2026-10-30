@@ -1,0 +1,941 @@
+MASTER CLAUDE CODE PROMPT — MULTI-TENANT SCHOOL MANAGEMENT SAAS
+
+You are a principal software architect and senior full-stack engineer. Build a production-oriented, multi-tenant School Management SaaS for Bangladesh. Work inside the current repository. Do not merely describe code: inspect the repository, plan, implement, test and document the application incrementally.
+
+
+A. PRODUCT REQUIREMENTS
+
+Build one SaaS platform serving:
+
+
+
+Schools (Class 1–12 and configurable stages)
+
+Colleges
+
+Kindergartens
+
+Madrasas
+
+Combined institutions
+
+
+Business model: multiple subscribing institutions.
+Market: Bangladesh.
+Language: Bangla and English.
+Currency: BDT.
+Timezone: Asia/Dhaka.
+Tenant website: {school-slug}.YOUR_DOMAIN.
+Initial delivery: responsive web application only; no native mobile apps and no PWA requirement.
+
+
+Each school receives:
+
+
+
+Private school administration environment.
+
+Teacher portal.
+
+Student portal.
+
+Parent/guardian portal.
+
+Public-facing school website with editable content and admission form.
+
+
+Central platform receives:
+
+
+
+Super Admin dashboard.
+
+School onboarding and tenant management.
+
+Plans, subscriptions, invoices and platform payments.
+
+Usage limits and feature entitlements.
+
+Support tickets and audit logs.
+
+
+B. REQUIRED TECHNOLOGY
+
+Use:
+
+
+
+Laravel (latest stable version compatible with the installed PHP runtime)
+
+React + TypeScript
+
+Inertia.js
+
+Tailwind CSS
+
+shadcn/ui components where appropriate
+
+MySQL 8+
+
+Redis for cache and queues
+
+Laravel Horizon for queue monitoring
+
+Laravel-supported session authentication
+
+Sanctum only if token-based API access is needed
+
+Spatie Laravel Permission or an equivalent well-maintained permission system
+
+Recharts for charts
+
+Pest or PHPUnit for backend tests
+
+Vite for frontend assets
+
+
+Use the official Laravel React starter kit if creating a new application. Inspect the repository before scaffolding; do not overwrite existing work without understanding it. Pin dependency versions in lockfiles. Prefer maintained libraries and official documentation.
+
+
+Use a modular monolith, not microservices. Organize domain modules so they can be maintained independently.
+
+
+C. ARCHITECTURE AND TENANCY — NON-NEGOTIABLE
+
+Use shared MySQL database and shared tenant tables for the initial version.
+
+
+Central platform tables include platform users, schools, school domains, plans, plan features, subscriptions, platform invoices, platform payments, support tickets and platform activity logs.
+
+
+Every tenant-owned record MUST include school_id, including users, roles, students, guardians, enrollments, teachers, attendance, examinations, fees, notices, settings, files and logs.
+
+
+Tenant identification:
+
+
+
+Resolve the request hostname to a school domain record.
+
+Reject unknown, inactive, suspended or invalid tenants with safe responses.
+
+Establish immutable request-scoped tenant context.
+
+Never accept school_id from a form, query parameter or arbitrary request header as authoritative.
+
+Derive school identity from the resolved tenant context.
+
+Apply tenant-aware query scopes, policies and service validation.
+
+Restore and clear tenant context correctly in queued jobs and scheduled commands.
+
+
+Subdomains:
+
+
+
+admin.YOUR_DOMAIN for platform administration.
+
+{school-slug}.YOUR_DOMAIN for tenant portal and public website.
+
+Root domain for marketing and registration.
+
+
+Security:
+
+
+
+Global scopes are not the only security boundary.
+
+Every service, policy, export, file download, API endpoint and job must enforce tenant ownership.
+
+Prevent cross-tenant foreign-key associations.
+
+Include tenant ID in cache keys, file paths and job payloads.
+
+Test cross-tenant IDOR attempts.
+
+Parent can access only linked children.
+
+Teacher can access only assigned classes/subjects and authorized records.
+
+Platform support access to school data must be explicit, time-limited, reason-logged and audited.
+
+Do not log passwords, tokens, NID, birth registration numbers, payment secrets or sensitive student data.
+
+
+Do not build custom cryptography. Use framework encryption and established password hashing.
+
+
+D. DOMAIN MODULES
+
+Implement the following modules with their own models, requests, policies, services, events/jobs as needed and tests.
+
+
+1. Platform SaaS
+
+
+Platform dashboard.
+
+School create, approve, activate, suspend, archive.
+
+School slug and subdomain management.
+
+Plans and configurable feature/usage limits.
+
+Monthly/yearly subscriptions.
+
+Trial, renewal, past-due, grace period, suspension and cancellation.
+
+Platform invoices and payment history.
+
+Support tickets.
+
+Platform audit logs.
+
+
+Do not hardcode plan limits. Store plan features and limits as database configuration. Subscription expiration must not delete school data. Provide export and a documented retention policy.
+
+
+2. Tenant setup
+
+
+Institution profile and type.
+
+Logo, contact, address, locale and timezone.
+
+Campuses.
+
+Academic sessions.
+
+Configurable stages/classes/sections/subjects.
+
+Working days, holidays and academic calendar.
+
+Grading configuration.
+
+Module activation and school settings.
+
+
+3. Admissions and people
+
+
+Public admission application form.
+
+Application review, approve/reject and conversion to student.
+
+Student profiles, documents and enrollment history.
+
+Multiple guardians per student.
+
+One guardian linked to multiple students.
+
+Teacher and staff profiles.
+
+CSV/XLSX import with preview, validation, duplicate detection and downloadable error report.
+
+Student promotion, repeat, transfer, withdrawal and graduation.
+
+
+4. Academic engine
+
+
+Academic sessions, classes, sections, subjects.
+
+Teacher-class-subject assignments.
+
+Class routines/timetable.
+
+Configurable institution types.
+
+Optional term/semester/year structure.
+
+Do not hardcode class names or a single institution's workflow.
+
+
+5. Attendance
+
+
+Daily and period-wise attendance.
+
+Present, absent, late, leave and half-day.
+
+Bulk marking and controlled correction.
+
+Prevent duplicate attendance for the same student/session.
+
+Attendance summaries and optional parent notification.
+
+
+6. Homework
+
+
+Teacher assignments.
+
+Due dates and attachments.
+
+Student submissions.
+
+Teacher feedback and marks.
+
+
+7. Examinations and results
+
+
+Exam types and schedules.
+
+Subject and assessment components: written, MCQ, practical and configurable additional components.
+
+Full marks and pass marks.
+
+Configurable grading scale and GPA rules.
+
+Optional subjects and school-specific rules.
+
+Marks entry, verification, result calculation, approval and publication.
+
+Bilingual printable report cards.
+
+Store calculation inputs/configuration/version so published results can be audited and reproduced.
+
+
+Never assume one grading formula applies to all Bangladeshi institutions. Make grading configurable and test using approved example cases.
+
+
+8. Fees and finance
+
+
+Fee categories and fee structures.
+
+Student-specific fee assignments.
+
+Invoice generation and line items.
+
+Discounts, scholarships, late fees and partial payments.
+
+Payment allocations.
+
+Receipts.
+
+Refund/reversal workflow.
+
+Cash, bank and online payments.
+
+Financial reports.
+
+
+Use DECIMAL for money. Do not silently delete financial records. Use immutable payment records and reversal/refund entries. Wrap payment allocation and balance updates in database transactions.
+
+
+9. Payment integrations
+
+Create a provider adapter interface. Implement the architecture so bKash, Nagad, Rocket and SSLCommerz can be added independently after official merchant credentials and current provider documentation are supplied.
+
+
+Never invent API endpoints or pretend an integration works without valid credentials and sandbox tests.
+
+
+
+Verify callbacks server-side.
+
+Verify signatures/hash according to provider documentation.
+
+Make callbacks idempotent.
+
+Store gateway reference and sanitized response.
+
+Do not mark payment paid from a browser redirect.
+
+Add reconciliation for pending/unknown transactions.
+
+
+10. Notifications
+
+
+In-app notifications.
+
+Email and SMS provider abstraction.
+
+Bangla/English templates.
+
+Delivery logs, retry and failure handling.
+
+Queue bulk messages and enforce provider rate limits.
+
+School-level provider configuration with encrypted secrets.
+
+
+11. Parent portal
+
+
+Switch between linked children.
+
+View attendance, timetable, homework, results, fees, receipts and notices.
+
+Pay invoices when a configured gateway is available.
+
+Parent can never access unlinked students.
+
+
+12. Student portal
+
+
+Own timetable, attendance, homework, results and notices.
+
+No access to another student's data.
+
+
+13. Teacher portal
+
+
+Assigned timetable, classes and subjects.
+
+Attendance.
+
+Homework.
+
+Marks entry and permitted reports.
+
+No access outside assignments unless separately authorized.
+
+
+14. Public school website
+
+
+Reusable templates.
+
+School logo, theme colors, contact information.
+
+Home, about, principal message, academics, teachers, admission, notices, events, gallery and contact.
+
+Page/menu editor.
+
+Public admission form.
+
+SEO title, description, canonical URLs, sitemap and indexable server-rendered content.
+
+Public pages must never reveal private student/guardian data.
+
+
+15. Later modules (do not block MVP)
+
+
+Library.
+
+Transport.
+
+Hostel.
+
+Payroll.
+
+Advanced accounting.
+
+AI assistant.
+
+
+E. DATABASE REQUIREMENTS
+
+Create ordered Laravel migrations, not just raw SQL.
+
+
+Use the supplied school_saas_schema.sql as a reference if present in the project. Review it critically; do not blindly assume it is production-ready.
+
+
+At minimum model:
+
+
+
+Platform users, schools, domains, plans, plan features, subscriptions, invoices, payments, support tickets, platform logs.
+
+Tenant users, roles, permissions and pivots.
+
+Campuses and school settings.
+
+Academic sessions, classes, sections, subjects, class-subject mappings.
+
+Teachers, guardians, students, student-guardian pivot, student enrollments, admission applications and documents.
+
+Teacher assignments and class routines.
+
+Attendance sessions and student/teacher attendance.
+
+Exam types, examinations, exam subjects, grading scales/items, marks and results.
+
+Fee categories, structures, student fee assignments, invoices/items, payments and payment allocations.
+
+Expenses.
+
+Assignments and submissions.
+
+Notices and notification logs.
+
+Website settings, pages and menus.
+
+Activity/audit logs, integrations and import jobs.
+
+Optional library, transport and payroll tables when implementing those modules.
+
+
+Database conventions:
+
+
+
+InnoDB, utf8mb4.
+
+BIGINT UNSIGNED internal IDs.
+
+Tenant-owned rows have school_id.
+
+Tenant-scoped unique values (admission no, invoice no, receipt no, email/phone where applicable).
+
+Foreign keys and indexes.
+
+Composite indexes for common school/session/class/date queries.
+
+DECIMAL for money and marks.
+
+UTC timestamp storage and Asia/Dhaka display.
+
+Soft delete only where appropriate.
+
+JSON only for flexible configuration or sanitized provider payloads.
+
+Use transactions for multi-step financial and academic operations.
+
+
+Review composite tenant constraints. A normal foreign key to students.id does not alone prove that the referenced student belongs to the same school. Enforce same-tenant relationships through service validation and, where practical, composite unique keys and composite foreign keys.
+
+
+F. FRONTEND DESIGN
+
+Design a clean, premium, professional education SaaS UI. Avoid a generic unstyled admin template.
+
+
+Visual direction:
+
+
+
+Clear sidebar and top navigation.
+
+Light theme initially, optional dark mode later.
+
+White/neutral surfaces, restrained accent color, readable typography.
+
+Bangla font support such as Noto Sans Bengali or Hind Siliguri.
+
+Responsive layouts from mobile to desktop.
+
+Accessible contrast, keyboard focus and labels.
+
+Consistent empty, loading, error and success states.
+
+
+Build reusable components:
+
+
+
+AppShell, Sidebar, Topbar, Breadcrumbs.
+
+PageHeader, StatCard, ChartCard.
+
+DataTable with server-side pagination, filtering and sorting.
+
+Search/filter panel.
+
+Form fields and validation display.
+
+Dialog, confirmation dialog and drawer.
+
+Date picker, file uploader, status badge.
+
+Notification center.
+
+EmptyState, ErrorState, LoadingSkeleton.
+
+Printable report/invoice layouts.
+
+
+Do not place all modules in one giant React component. Use typed page props and reusable hooks.
+
+
+G. ROUTING
+
+Marketing:
+
+
+
+/
+
+/features
+
+/pricing
+
+/register-school
+
+/login
+
+
+Platform:
+
+
+
+admin.YOUR_DOMAIN/platform/dashboard
+
+admin.YOUR_DOMAIN/platform/schools
+
+admin.YOUR_DOMAIN/platform/plans
+
+admin.YOUR_DOMAIN/platform/subscriptions
+
+admin.YOUR_DOMAIN/platform/invoices
+
+admin.YOUR_DOMAIN/platform/support
+
+
+Tenant:
+
+
+
+{school}.YOUR_DOMAIN/dashboard
+
+/admissions
+
+/students
+
+/guardians
+
+/teachers
+
+/academics
+
+/attendance
+
+/timetable
+
+/homework
+
+/examinations
+
+/results
+
+/fees
+
+/reports
+
+/notices
+
+/website
+
+/settings
+
+
+Portals:
+
+
+
+/teacher/dashboard
+
+/student/dashboard
+
+/parent/dashboard
+
+
+Public website:
+
+
+
+/
+
+/about
+
+/admission
+
+/notices
+
+/contact
+
+
+Avoid route collisions between public school website routes and authenticated portal routes. Define a deliberate route namespace and resolve it by hostname and path.
+
+
+H. IMPLEMENTATION PROCESS
+
+Work in milestones. Do not generate the entire application in one unreviewable code dump.
+
+
+Milestone 0: Inspect and plan
+
+
+Inspect repository, PHP, Composer, Node and database availability.
+
+Summarize current state.
+
+Create docs/architecture.md, docs/data-dictionary.md, docs/roadmap.md.
+
+Create implementation checklist.
+
+Identify any decisions that genuinely block implementation; otherwise choose safe defaults and document them.
+
+
+Milestone 1: Foundation and tenancy
+
+
+Scaffold app if required.
+
+Configure React/TypeScript/Inertia.
+
+Configure MySQL and Redis.
+
+Build tenant resolver and subdomain routing.
+
+Build platform authentication and tenant authentication.
+
+Build permissions and tenant-aware audit.
+
+Add cross-tenant feature tests before building business modules.
+
+
+Milestone 2: School setup and people
+
+
+School onboarding.
+
+School settings and campus.
+
+Academic sessions/classes/sections/subjects.
+
+Student, guardian, teacher and staff records.
+
+Admission application and conversion.
+
+CSV import.
+
+
+Milestone 3: Academic operations
+
+
+Teacher assignments.
+
+Timetable.
+
+Calendar/holidays.
+
+Attendance.
+
+Homework.
+
+
+Milestone 4: Examinations
+
+
+Exam configuration.
+
+Marks entry.
+
+Configurable grade calculation.
+
+Approval and publication.
+
+Report cards.
+
+
+Milestone 5: Finance
+
+
+Fee configuration.
+
+Invoice generation.
+
+Payment allocation.
+
+Manual payment.
+
+Gateway abstraction and sandbox integration only when credentials are provided.
+
+Receipts and reports.
+
+
+Milestone 6: Portals and public websites
+
+
+Teacher, parent and student portals.
+
+Website templates and content editor.
+
+Admission form.
+
+SEO.
+
+
+Milestone 7: SaaS billing and notifications
+
+
+Plan features and usage limits.
+
+Subscriptions and invoices.
+
+Trial/grace/suspension.
+
+SMS/email adapter.
+
+Support and usage dashboard.
+
+
+Milestone 8: Hardening
+
+
+Full tenant isolation review.
+
+Security and authorization review.
+
+Load testing and query optimization.
+
+Backup/restore test.
+
+Pilot school onboarding.
+
+Production deployment guide.
+
+
+At the end of each milestone:
+
+
+
+Run backend tests.
+
+Run frontend typecheck and build.
+
+Fix all failures.
+
+Update documentation.
+
+Summarize files changed and features delivered.
+
+List known limitations.
+
+Propose the next milestone; do not claim unfinished modules are complete.
+
+
+I. TESTING AND ACCEPTANCE
+
+Required tests:
+
+
+
+Unknown subdomain cannot access a tenant.
+
+Tenant A cannot read/update/delete Tenant B records.
+
+Cross-tenant access is denied for IDs guessed in URL/body.
+
+Tenant isolation also applies to queues, exports, storage, search and notifications.
+
+Parent can access only linked children.
+
+Teacher can access only assigned classes/subjects.
+
+Duplicate attendance is rejected.
+
+Student can have multiple guardians; guardian can have multiple students.
+
+Admission conversion creates correct student, guardian links and enrollment.
+
+Student promotion preserves historical enrollment.
+
+Grading calculations match school-approved fixtures.
+
+Invoice total and outstanding balance calculations are correct.
+
+Partial payment allocations work.
+
+Duplicate gateway callback does not double-credit payment.
+
+Invalid gateway signature is rejected.
+
+Subscription expiry/grace/suspension follows plan policy.
+
+Public website never exposes private records.
+
+Bangla text renders correctly in UI and generated PDFs.
+
+
+Definition of done:
+
+
+
+Responsive UI.
+
+Backend validation and authorization.
+
+Tenant isolation.
+
+Automated tests.
+
+Loading/empty/error states.
+
+Audit logs where appropriate.
+
+No exposed secrets.
+
+Updated docs.
+
+
+J. WORKING RULES
+
+
+First inspect the repository; do not assume it is empty.
+
+Do not overwrite files without inspecting them.
+
+Never hardcode credentials, domains, payment secrets or SMS API keys.
+
+Use .env.example with placeholders.
+
+Do not fabricate payment gateway integrations.
+
+Do not use fake data in production paths.
+
+Seed realistic demo data only in local/testing environments.
+
+Use Form Requests or equivalent validation.
+
+Use Policies for authorization.
+
+Keep controllers thin; business logic belongs in services/actions.
+
+Use database transactions for financial and multi-record workflows.
+
+Use queues for bulk tasks.
+
+Use pagination for large lists.
+
+Avoid N+1 queries.
+
+Document architectural trade-offs.
+
+If a requirement is ambiguous but does not block safe progress, make a reasonable configurable choice and document it.
+
+Never claim tests passed unless they were actually run.
+
+
+K. FIRST TASK
+
+Begin now:
+
+
+
+Inspect the repository and available runtime.
+
+Report the detected environment and existing application state.
+
+Propose the concrete Milestone 0 and Milestone 1 task list.
+
+Create the architecture and implementation documentation.
+
+Scaffold only what is missing.
+
+Implement tenant-aware foundations and their tests before student/fee modules.
+
+
+Do not jump directly to all modules. Establish a secure, tested foundation first.
+
