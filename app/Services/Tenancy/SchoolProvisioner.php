@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Setup\Models\Campus;
 use App\Support\Permissions\TenantPermissions;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -29,7 +30,7 @@ class SchoolProvisioner
 
     /**
      * @param  array{name: string, slug: string, name_bn?: string|null, institution_type?: string, email?: string|null, phone?: string|null, locale?: string}  $school
-     * @param  array{name: string, email: string, password: string}  $owner
+     * @param  array{name: string, email: string, password?: string|null}  $owner  Without a password the owner is invited by email.
      */
     public function provision(array $school, array $owner, SchoolStatus $status = SchoolStatus::Trial): School
     {
@@ -37,7 +38,7 @@ class SchoolProvisioner
         $this->assertValidSlug($slug);
 
         return DB::transaction(function () use ($school, $slug, $owner, $status) {
-            $model = new School($school);
+            $model = new School(Arr::except($school, ['slug']));
             $model->slug = $slug;
             $model->status = $status;
             $model->activated_at = $status === SchoolStatus::Active ? now() : null;
@@ -58,6 +59,14 @@ class SchoolProvisioner
                 }
 
                 Campus::create(['name' => 'Main campus', 'is_main' => true]);
+
+                if (empty($owner['password'])) {
+                    $invitations = app(InvitationService::class);
+                    $user = $invitations->createInvitedUser($owner['name'], $owner['email'], role: 'School Owner');
+                    $invitations->invite($user);
+
+                    return;
+                }
 
                 $user = new User(['name' => $owner['name'], 'email' => Str::lower($owner['email']), 'password' => $owner['password']]);
                 $user->status = 'active';

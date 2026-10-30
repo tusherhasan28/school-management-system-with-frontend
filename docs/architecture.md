@@ -21,7 +21,12 @@ app/
   Http/Middleware/        ResolveTenant, EnsureUserBelongsToTenant, ...
   Models/                 Central models (School, SchoolDomain, PlatformUser)
   Modules/<Module>/       Tenant domain modules (Models, Http, Policies, Services, ...)
-    Setup/                Campuses (reference implementation for every module)
+    Setup/                Campuses, setup wizard, school settings
+    Academics/            Sessions, classes, sections, subjects, class-subject mapping
+    People/               Students, guardians, enrollments, staff; promotion lifecycle
+    Admissions/           Public applications, review, conversion
+    Imports/              CSV/XLSX import (reader, validation, queued job)
+  Support/Authorization/  TenantPolicy base (permission + same-school check)
   Services/Audit/         AuditLogger (tenant) and PlatformAuditLogger
 ```
 
@@ -140,6 +145,11 @@ administration under `/app` is the deliberate namespace that keeps both.
   roles use the `platform` guard with a null team.
 - **Support access to tenant data** (Milestone 7): a `support_access_grants` row with
   reason, expiry and approver; every access is audited.
+
+### Admin-host-only tools
+Horizon runs on `admin.APP_DOMAIN` only (`config/horizon.php` domain + `platform.host`
+middleware + `auth:platform`) and is limited to platform owners/administrators in
+every environment. Guest redirects choose the login page by host, not path.
 
 ## 5. Audit and logging
 

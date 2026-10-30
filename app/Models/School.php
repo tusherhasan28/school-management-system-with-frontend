@@ -31,7 +31,8 @@ class School extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name', 'name_bn', 'slug', 'institution_type', 'email', 'phone', 'address',
+        // slug and status are never mass assignable (set by provisioning/lifecycle only).
+        'name', 'name_bn', 'institution_type', 'email', 'phone', 'address',
         'district', 'division', 'timezone', 'locale', 'primary_color',
     ];
 

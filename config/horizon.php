@@ -28,7 +28,8 @@ return [
     |
     */
 
-    'domain' => env('HORIZON_DOMAIN'),
+    // Only on the platform admin host; never on school subdomains.
+    'domain' => env('HORIZON_DOMAIN', env('TENANCY_ADMIN_SUBDOMAIN', 'admin').'.'.env('APP_DOMAIN', 'schoolsaas.test')),
 
     /*
     |--------------------------------------------------------------------------
@@ -83,7 +84,7 @@ return [
     |
     */
 
-    'middleware' => ['web'],
+    'middleware' => ['platform.host', 'web', 'auth:platform'],
 
     /*
     |--------------------------------------------------------------------------

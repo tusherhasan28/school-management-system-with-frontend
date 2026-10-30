@@ -5,7 +5,7 @@ gets its own subdomain (`{school}.your-domain`) with an admin panel, portals and
 public website, all in Bangla and English, with strict data isolation between
 schools.
 
-**Status:** Milestone 1 (foundation and tenancy) complete. See
+**Status:** Milestones 1 (foundation and tenancy) and 2 (school setup and people) complete. See
 [`docs/roadmap.md`](docs/roadmap.md) for what is built and what comes next.
 
 ## Stack
@@ -49,13 +49,19 @@ then `php artisan serve` and open, for example, `http://dhaka-model.schoolsaas.t
 | `dhaka-model.schoolsaas.test/login` | `principal@dhaka-model.test` |
 | `ctg-madrasa.schoolsaas.test/login` | `principal@ctg-madrasa.test` |
 
+Dhaka Model School is seeded with a finished setup (session 2026, classes 1–10 with
+sections A/B, subjects), four students (two siblings sharing a guardian), a teacher and
+one admission application. A pending school registration waits in the platform admin.
+The public admission form is at `dhaka-model.schoolsaas.test/admission`.
+
 ### Useful commands
 ```bash
 php artisan school:create my-school --name="My School" --owner-name="..." --owner-email="..."
 php artisan platform:create-admin --name="..." --email="..."
+php artisan tenancy:sync-permissions   # after adding permissions/roles in TenantPermissions
 php artisan test                 # runs against the school_saas_test MySQL database
 npm run types:check
-php artisan horizon              # queue workers (Redis)
+php artisan horizon              # queue workers (Redis): imports and emails need a worker
 ```
 
 ## Production notes

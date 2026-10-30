@@ -109,6 +109,14 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($throttleKey);
         });
 
+        // Public, unauthenticated forms (admission applications, school registration).
+        RateLimiter::for('public-forms', function (Request $request) {
+            return [
+                Limit::perMinute(3)->by('form|'.$request->getHost().'|'.$request->ip()),
+                Limit::perDay(30)->by('form-day|'.$request->ip()),
+            ];
+        });
+
         RateLimiter::for('platform-login', function (Request $request) {
             return Limit::perMinute(5)->by(Str::lower((string) $request->input('email')).'|'.$request->ip());
         });

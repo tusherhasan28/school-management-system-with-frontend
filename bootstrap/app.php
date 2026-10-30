@@ -53,13 +53,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => EnsureUserIsActive::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('platform', 'platform/*')
-            ? route('platform.login')
-            : route('login'));
+        // Decide by host, not path: everything on admin.APP_DOMAIN (including
+        // /horizon) belongs to the platform guard.
+        $isAdminHost = fn (Request $request) => strtolower($request->getHost())
+            === strtolower(config('tenancy.admin_subdomain').'.'.config('tenancy.domain'));
 
-        $middleware->redirectUsersTo(fn (Request $request) => $request->is('platform', 'platform/*')
-            ? route('platform.dashboard')
-            : route('dashboard'));
+        $middleware->redirectGuestsTo(fn (Request $request) => $isAdminHost($request) ? route('platform.login') : route('login'));
+        $middleware->redirectUsersTo(fn (Request $request) => $isAdminHost($request) ? route('platform.dashboard') : route('dashboard'));
 
         $middleware->web(append: [
             HandleAppearance::class,

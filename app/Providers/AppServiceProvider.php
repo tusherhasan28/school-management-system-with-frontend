@@ -29,7 +29,22 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
 
-        Gate::policy(Campus::class, CampusPolicy::class);
+        $policies = [
+            Campus::class => CampusPolicy::class,
+            \App\Modules\Academics\Models\AcademicSession::class => \App\Modules\Academics\Policies\AcademicsPolicy::class,
+            \App\Modules\Academics\Models\SchoolClass::class => \App\Modules\Academics\Policies\AcademicsPolicy::class,
+            \App\Modules\Academics\Models\Section::class => \App\Modules\Academics\Policies\AcademicsPolicy::class,
+            \App\Modules\Academics\Models\Subject::class => \App\Modules\Academics\Policies\AcademicsPolicy::class,
+            \App\Modules\People\Models\Student::class => \App\Modules\People\Policies\StudentPolicy::class,
+            \App\Modules\People\Models\Guardian::class => \App\Modules\People\Policies\GuardianPolicy::class,
+            \App\Modules\People\Models\StaffMember::class => \App\Modules\People\Policies\StaffPolicy::class,
+            \App\Modules\Admissions\Models\AdmissionApplication::class => \App\Modules\Admissions\Policies\AdmissionPolicy::class,
+            \App\Modules\Imports\Models\DataImportJob::class => \App\Modules\Imports\Policies\ImportPolicy::class,
+        ];
+
+        foreach ($policies as $model => $policy) {
+            Gate::policy($model, $policy);
+        }
     }
 
     /**

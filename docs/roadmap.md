@@ -34,12 +34,19 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ Bangla/English UI (shared translations, Hind Siliguri font), responsive layouts
 - ✅ 97 automated tests (see "Test coverage" below)
 
-## Milestone 2 — School setup and people ⬜
-School registration + approval flow (marketing → platform), setup wizard (resumable),
-school settings, academic sessions, classes/stages, sections, subjects,
-class-subject mapping, students, guardians (many-to-many), teachers/staff, user
-invitations, admission applications and conversion (transactional), CSV/XLSX import
-with preview, duplicate detection and error report (queued).
+## Milestone 2 — School setup and people ✅
+- ✅ School registration on the marketing site (honeypot, rate limit, live web-address check) → platform review → approve (provisions a trial school, invites the contact as School Owner) / reject with reason
+- ✅ Resumable setup wizard: profile, current session, classes + sections (presets per institution type, fully editable), subjects
+- ✅ Academic sessions (exactly one current), classes, sections, subjects, class-subject mapping with full/pass marks per session; delete guards
+- ✅ Students with encrypted birth registration number, generated admission numbers, enrollment per session, roll numbers unique per section
+- ✅ Guardians many-to-many with students; siblings share one guardian (same name + normalised phone); primary guardian; last link protected
+- ✅ Teachers/staff profiles; optional login with a staff role via emailed, single-use, expiring invitation (hash stored)
+- ✅ Public admission form → review (under review / approve / reject with reason) → transactional, idempotent conversion into student + guardian + enrollment
+- ✅ Promotion / repeat in bulk with history preserved; transfer / withdraw / graduate close the enrollment
+- ✅ CSV and XLSX student import: validation, duplicate detection (file + database), preview, queued import (tenant-aware job), per-row transactions, downloadable error report (formula-injection safe)
+- ✅ Dashboard: active students, staff, applications to review, students-by-class chart, setup progress
+- ✅ Horizon restricted to the admin host and platform owners/admins
+- ✅ 148 automated tests (51 new for this milestone)
 
 ## Milestone 3 — Academic operations ⬜
 Teacher assignments (resource-level access), timetable, calendar/holidays/working
@@ -72,7 +79,11 @@ provider abstraction with Bangla/English templates and delivery logs.
 Isolation review, authorization review, load test, query tuning, backup/restore
 drill, pilot onboarding, production deployment guide.
 
-## Known limitations after Milestone 1
+## Known limitations after Milestone 2
+- Imports cover students (with one guardian per row). Staff and guardian-only imports are not built yet.
+- Student photos and document uploads are not built yet (storage helpers exist).
+- Teachers do not yet see "their" classes: teacher–class–subject assignments arrive in Milestone 3, so the Teacher role has no student access for now.
+- No custom roles UI yet; schools use the default roles (`tenancy:sync-permissions` keeps them current).
 - Passkeys disabled (relying-party id must be per school host).
 - Starter-kit settings pages (profile, password, 2FA, appearance) are still English-only.
 - Bangla validation messages cover the common rules only; others fall back to English.
@@ -80,6 +91,16 @@ drill, pilot onboarding, production deployment guide.
 - No plans/subscriptions yet: school status is changed manually by platform admins.
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.
+
+## Test coverage (Milestone 2 additions)
+| Area | File |
+|---|---|
+| Student admission, guardians many-to-many, sequences, encryption + masking, section/class FK, roll uniqueness, cross-school references and IDOR, filters, roles, promotion/repeat/graduation history | `tests/Feature/People/StudentManagementTest.php` |
+| Staff logins, invitations (single use, expiry, re-invite, other school), role limits | `tests/Feature/People/StaffAndInvitationTest.php` |
+| Public form (no data leak, honeypot, foreign class, rate limit), review transitions, conversion (sibling guardian reuse, idempotent), cross-school | `tests/Feature/Admissions/AdmissionFlowTest.php` |
+| CSV/XLSX preview counts, duplicates, confirm, sections per row, error report + formula injection, cross-school files, permissions | `tests/Feature/Imports/StudentImportTest.php` |
+| Registration, slug rules, approval provisioning + owner invite, rejection, platform roles | `tests/Feature/Platform/SchoolRegistrationTest.php` |
+| Setup wizard, presets, current session, delete guards, class subjects, per-school uniqueness, teacher access, Horizon lockdown | `tests/Feature/Academics/AcademicsAndSetupTest.php` |
 
 ## Test coverage (Milestone 1)
 | Area | File |

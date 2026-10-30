@@ -149,6 +149,6 @@ class CrossTenantAccessTest extends TestCase
                 ->missing('school.id')
                 ->missing('auth.user.school_id')
                 ->missing('auth.user.password')
-                ->where('stats.campuses', 1));
+                ->where('stats.students', 0));
     }
 }

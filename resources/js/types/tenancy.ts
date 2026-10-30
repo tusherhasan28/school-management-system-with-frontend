@@ -24,3 +24,12 @@ export type Paginated<T> = {
     to: number | null;
     links: { url: string | null; label: string; active: boolean }[];
 };
+
+export type SessionOption = { id: number; name: string; is_current: boolean };
+
+export type AcademicClass = {
+    id: number;
+    name: string;
+    name_bn: string | null;
+    sections: { id: number; name: string }[];
+};

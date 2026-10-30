@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { LayoutGrid, LogOut, School } from 'lucide-react';
+import { Inbox, LayoutGrid, LogOut, School } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useT } from '@/lib/i18n';
 import { dashboard, logout } from '@/routes/platform';
+import { index as registrations } from '@/routes/platform/registrations';
 import { index as schools } from '@/routes/platform/schools';
 import type { BreadcrumbItem } from '@/types';
 
@@ -59,6 +60,7 @@ export default function PlatformLayout({
                         items={[
                             { title: t('Dashboard'), href: dashboard(), icon: LayoutGrid },
                             { title: t('Schools'), href: schools(), icon: School },
+                            { title: t('Registrations'), href: registrations(), icon: Inbox },
                         ]}
                     />
                 </SidebarContent>
