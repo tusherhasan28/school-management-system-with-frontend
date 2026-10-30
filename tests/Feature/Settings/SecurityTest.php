@@ -7,9 +7,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class SecurityTest extends TestCase
+class SecurityTest extends TenantTestCase
 {
     use RefreshDatabase;
 
@@ -32,7 +32,7 @@ class SecurityTest extends TestCase
             ->get(route('security.edit'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('settings/security')
-                ->where('canManagePasskeys', true)
+                ->where('canManagePasskeys', false)
                 ->where('passkeys', [])
                 ->where('canManageTwoFactor', true)
                 ->where('twoFactorEnabled', false),

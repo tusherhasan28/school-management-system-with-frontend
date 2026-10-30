@@ -2,46 +2,84 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PlatformUser;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
     /**
-     * The root template that's loaded on the first page visit.
-     *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     *
      * @var string
      */
     protected $rootView = 'app';
 
-    /**
-     * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
     /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
+     * Only whitelisted fields are shared with the browser: never whole models.
      *
      * @return array<string, mixed>
      */
     public function share(Request $request): array
     {
+        $tenant = app(TenantContext::class);
+        $school = $tenant->school();
+        $locale = app()->getLocale();
+
+        $user = $school ? Auth::guard('web')->user() : null;
+        /** @var PlatformUser|null $platformUser */
+        $platformUser = $school ? null : Auth::guard('platform')->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'locale' => $locale,
+            'translations' => fn () => $this->translations($locale),
+            'school' => $school ? [
+                'name' => $school->name,
+                'name_bn' => $school->name_bn,
+                'slug' => $school->slug,
+                'locale' => $school->locale,
+                'timezone' => $school->timezone,
+                'currency' => $school->currency,
+            ] : null,
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'email_verified_at' => $user->email_verified_at,
+                    'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
+                    'avatar' => null,
+                ] : null,
+                'permissions' => $user ? fn () => $user->getAllPermissions()->pluck('name')->values() : [],
+                'platformUser' => $platformUser ? [
+                    'id' => $platformUser->id,
+                    'name' => $platformUser->name,
+                    'email' => $platformUser->email,
+                    'role' => $platformUser->role->value,
+                ] : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function translations(string $locale): array
+    {
+        $path = lang_path($locale.'.json');
+
+        if (! is_file($path)) {
+            return [];
+        }
+
+        return json_decode((string) file_get_contents($path), true) ?: [];
     }
 }

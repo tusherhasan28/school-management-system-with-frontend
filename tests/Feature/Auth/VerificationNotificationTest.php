@@ -7,9 +7,9 @@ use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class VerificationNotificationTest extends TestCase
+class VerificationNotificationTest extends TenantTestCase
 {
     use RefreshDatabase;
 

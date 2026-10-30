@@ -2,9 +2,8 @@
 
 namespace App\Concerns;
 
-use App\Models\User;
+use App\Support\Tenancy\TenantRule;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
 trait ProfileValidationRules
@@ -44,9 +43,10 @@ trait ProfileValidationRules
             'string',
             'email',
             'max:255',
+            // Unique within the current school only.
             $userId === null
-                ? Rule::unique(User::class)
-                : Rule::unique(User::class)->ignore($userId),
+                ? TenantRule::unique('users', 'email')
+                : TenantRule::unique('users', 'email')->ignore($userId),
         ];
     }
 }

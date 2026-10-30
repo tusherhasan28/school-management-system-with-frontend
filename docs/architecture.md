@@ -36,15 +36,23 @@ jobs and tests. Controllers stay thin and call services.
 | `admin.APP_DOMAIN` | Platform (Super Admin) dashboard | `platform` |
 | `{slug}.APP_DOMAIN` | One school: public website, admin panel, portals | `web` (tenant users) |
 
-`APP_DOMAIN` comes from `.env`; nothing is hard-coded. Route files:
+`APP_DOMAIN` comes from `.env`; nothing is hard-coded. Routes are registered in
+this order (`bootstrap/app.php`):
 
-- `routes/marketing.php` — `Route::domain(APP_DOMAIN)`
-- `routes/platform.php` — `Route::domain('admin.'.APP_DOMAIN)`, prefix `/platform`
-- `routes/tenant.php` — `Route::domain('{school}.'.APP_DOMAIN)` + `tenant` middleware
+1. `routes/marketing.php` — `Route::domain(APP_DOMAIN)`, middleware `web`.
+2. `routes/platform.php` — **path-only** (`/platform/*`), middleware
+   `platform.host` → `web`. `EnsurePlatformHost` 404s any host other than
+   `admin.APP_DOMAIN`. Path-only routes keep Wayfinder's generated frontend
+   URLs relative (a domain-bound route would bake the domain into the JS bundle).
+3. `routes/tenant.php` — no domain constraint, middleware `tenant` → `web` →
+   `tenant.session`. Registered last, it matches any other host; `ResolveTenant`
+   404s hosts that are not a known school domain. Fortify's routes are required
+   inside this group, so login, password reset and 2FA exist only on school hosts.
 
-The `{school}` route parameter is only used to match; `ResolveTenant` forgets it
-after resolution so it never reaches controllers. School identity is taken from the
-resolved hostname, **never** from request input.
+School identity is taken from the resolved hostname, **never** from request input.
+Middleware priority is configured so `ResolveTenant` runs before the session
+starts and `EnsureSessionBelongsToTenant` runs before authentication, Inertia
+shared props and route-model binding.
 
 Reserved subdomains (`admin`, `www`, `api`, `mail`, `static`, ...) cannot be used
 as school slugs (`config/tenancy.php`).
@@ -71,12 +79,12 @@ administration under `/app` is the deliberate namespace that keeps both.
 2. Unknown host → 404 with a generic page. Suspended/cancelled/archived/pending →
    a generic "unavailable" response (HTTP 403/503) that does not reveal whether
    the slug exists beyond what the public DNS already shows.
-3. `TenantContext::set($school)` — can be set once; setting a different school in
-   the same lifecycle throws. `TenantContext::run($school, fn)` is the only way to
-   switch temporarily (jobs, seeders, commands) and always restores the previous
-   state in `finally`.
-4. Spatie Permission team id is set to the school id.
-5. The context is cleared when the request/job finishes.
+3. The request runs inside `TenantContext::run($school, ...)`. Within it the
+   context is immutable: `set()` with a different school throws. `run()` always
+   restores the previous state in `finally`, so nothing leaks to the next request
+   on a long-lived worker.
+4. Spatie Permission's team id follows the context (set/cleared with it).
+5. The app locale is set from the school (`bn` default).
 
 ### Data access safeguards (defence in depth)
 
@@ -104,8 +112,12 @@ administration under `/app` is the deliberate namespace that keeps both.
 
 - **Jobs**: `Queue::createPayloadUsing` adds `school_id` to every payload dispatched
   while a tenant context is active. On `JobProcessing` the worker restores the
-  context; on `JobProcessed`/`JobFailed`/`JobExceptionOccurred` it clears it. A job
-  for a suspended school is released/failed rather than run.
+  context; on `JobProcessed`/`JobExceptionOccurred` it puts the previous state back
+  (works for the sync driver inside a request too). Tenant jobs add the
+  `EnsureTenantIsAccessible` job middleware so work for a suspended school is
+  dropped (data is kept). Note: `Job::dispatch()` sends when its PendingDispatch
+  is destroyed — dispatch as a statement inside the tenant scope, not as the
+  return value of a closure passed to `run()`.
 - **Cache**: `TenantCache` prefixes keys with `school:{id}:`. Do not call `Cache::`
   directly with tenant data.
 - **Files**: `TenantStorage::path('documents/x.pdf')` → `schools/{id}/documents/x.pdf`
@@ -116,7 +128,11 @@ administration under `/app` is the deliberate namespace that keeps both.
 
 - **Tenant users** (`users` table, `web` guard) — authenticated through Laravel
   Fortify on the tenant host only. Email is unique per school, not globally, so the
-  login query is scoped to the current school.
+  login query is scoped to the current school. Password-reset tokens are keyed by
+  `(school_id, email)` (`TenantPasswordTokenRepository`). The login throttle key
+  includes the host. Self-registration and self-deletion are disabled: accounts are
+  managed by the school. Passkeys are disabled until the relying-party id can be
+  set per school host.
 - **Platform users** (`platform_users` table, `platform` guard) — separate model,
   separate login page on `admin.` host, no Fortify registration.
 - **Permissions**: Spatie Laravel Permission with *teams* enabled; team key is
@@ -154,6 +170,10 @@ administration under `/app` is the deliberate namespace that keeps both.
 | Test database | MySQL `school_saas_test` | `phpunit.xml` |
 | Test framework | PHPUnit 12 (Pest optional later) | `composer.json` |
 | Unknown tenant response | 404 generic page | `ResolveTenant` |
+| Inaccessible school response | 503 generic page (`errors/school-unavailable`) | `ResolveTenant` |
+| Platform admin language | English | `TENANCY_PLATFORM_LOCALE` |
+| Platform roles | Fixed enum (`PlatformRole`), not Spatie | `app/Enums/PlatformRole.php` |
+| Brand accent | Deep teal `oklch(0.46 0.085 185)` | `resources/css/app.css` |
 
 ## 9. Trade-offs
 

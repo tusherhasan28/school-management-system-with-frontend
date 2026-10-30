@@ -1,3 +1,5 @@
+import type { PlatformUser } from '@/types/tenancy';
+
 export type User = {
     id: number;
     name: string;
@@ -12,14 +14,8 @@ export type User = {
 
 export type Auth = {
     user: User;
-};
-
-export type Passkey = {
-    id: number;
-    name: string;
-    authenticator: string | null;
-    created_at_diff: string;
-    last_used_at_diff: string | null;
+    permissions: string[];
+    platformUser: PlatformUser | null;
 };
 
 export type TwoFactorSetupData = {

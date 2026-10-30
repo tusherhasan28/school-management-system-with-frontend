@@ -1,27 +1,67 @@
-# Laravel + React Starter Kit
+# School SaaS — multi-tenant school management for Bangladesh
 
-## Introduction
+One platform for schools, colleges, kindergartens and madrasas. Each institution
+gets its own subdomain (`{school}.your-domain`) with an admin panel, portals and a
+public website, all in Bangla and English, with strict data isolation between
+schools.
 
-Our React starter kit provides a robust, modern starting point for building Laravel applications with a React frontend using [Inertia](https://inertiajs.com).
+**Status:** Milestone 1 (foundation and tenancy) complete. See
+[`docs/roadmap.md`](docs/roadmap.md) for what is built and what comes next.
 
-Inertia allows you to build modern, single-page React applications using classic server-side routing and controllers. This lets you enjoy the frontend power of React combined with the incredible backend productivity of Laravel and lightning-fast Vite compilation.
+## Stack
+Laravel 13 · Inertia 3 · React 19 + TypeScript · Tailwind CSS 4 + shadcn/ui ·
+MySQL 8 · Redis + Horizon · Spatie Permission (teams) · Fortify · Recharts · PHPUnit.
 
-This React starter kit utilizes React 19, TypeScript, Tailwind, and the [shadcn/ui](https://ui.shadcn.com) and [radix-ui](https://www.radix-ui.com) component libraries.
+## Documentation
+- [Architecture and tenancy design](docs/architecture.md)
+- [Data dictionary](docs/data-dictionary.md)
+- [Review of the baseline SQL schema](docs/schema-review.md)
+- [Roadmap, checklist and known limitations](docs/roadmap.md)
 
-## Official Documentation
+## Local setup
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+Requirements: PHP 8.3+, Composer, Node 22+, MySQL 8, Redis.
 
-## Contributing
+```bash
+composer install
+cp .env.example .env            # set DB_PASSWORD; keep APP_DOMAIN=schoolsaas.test for local
+php artisan key:generate
+mysql -e "CREATE DATABASE school_saas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+          CREATE DATABASE school_saas_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+php artisan migrate --seed       # demo data, local only
+npm install && npm run build
+```
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Hostnames
+Schools are resolved by hostname, so `localhost` alone will not work. Either use
+Laravel Herd/Valet (`*.test` resolves automatically) or add hosts entries:
 
-All contributions to the Starter Kits from now on should be made through [Maestro](https://github.com/laravel/maestro).
+```
+127.0.0.1 schoolsaas.test admin.schoolsaas.test dhaka-model.schoolsaas.test ctg-madrasa.schoolsaas.test
+```
 
-## Code of Conduct
+then `php artisan serve` and open, for example, `http://dhaka-model.schoolsaas.test:8000`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Demo accounts (local seed only; password `password`)
+| Where | Email |
+|---|---|
+| `admin.schoolsaas.test/platform/login` | `owner@schoolsaas.test` |
+| `dhaka-model.schoolsaas.test/login` | `principal@dhaka-model.test` |
+| `ctg-madrasa.schoolsaas.test/login` | `principal@ctg-madrasa.test` |
 
-## License
+### Useful commands
+```bash
+php artisan school:create my-school --name="My School" --owner-name="..." --owner-email="..."
+php artisan platform:create-admin --name="..." --email="..."
+php artisan test                 # runs against the school_saas_test MySQL database
+npm run types:check
+php artisan horizon              # queue workers (Redis)
+```
 
-The Laravel + React starter kit is open-sourced software licensed under the MIT license.
+## Production notes
+- Point a wildcard DNS record `*.your-domain` and the root/`admin` hosts at the app,
+  with a wildcard TLS certificate.
+- Keep `SESSION_DOMAIN=null` (host-only cookies) and set `SESSION_SECURE_COOKIE=true`.
+- Never commit `.env`; payment, SMS and mail credentials go in environment variables
+  or per-school encrypted integration settings (Milestone 5/7).
+- The seeder refuses to run outside `local`/`testing`.

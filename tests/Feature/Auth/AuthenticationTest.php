@@ -6,9 +6,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class AuthenticationTest extends TestCase
+class AuthenticationTest extends TenantTestCase
 {
     use RefreshDatabase;
 
@@ -80,7 +80,8 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
+        // Throttle key includes the school host (see FortifyServiceProvider).
+        RateLimiter::increment(md5('login'.implode('|', [$user->email, 'alpha.schoolsaas.test', '127.0.0.1'])), amount: 5);
 
         $response = $this->post(route('login.store'), [
             'email' => $user->email,

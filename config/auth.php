@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PlatformUser;
 use App\Models\User;
 
 return [
@@ -38,9 +39,16 @@ return [
     */
 
     'guards' => [
+        // Tenant users, only on {school}.APP_DOMAIN. The provider is tenant scoped.
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+        ],
+
+        // Platform staff, only on admin.APP_DOMAIN.
+        'platform' => [
+            'driver' => 'session',
+            'provider' => 'platform_users',
         ],
     ],
 
@@ -65,6 +73,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'platform_users' => [
+            'driver' => 'eloquent',
+            'model' => PlatformUser::class,
         ],
 
         // 'users' => [
@@ -94,9 +107,17 @@ return [
 
     'passwords' => [
         'users' => [
+            'driver' => 'tenant_database',
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'platform_users' => [
+            'provider' => 'platform_users',
+            'table' => 'platform_password_reset_tokens',
+            'expire' => 30,
             'throttle' => 60,
         ],
     ],

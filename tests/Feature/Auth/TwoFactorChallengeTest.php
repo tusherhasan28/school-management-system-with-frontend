@@ -6,9 +6,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class TwoFactorChallengeTest extends TestCase
+class TwoFactorChallengeTest extends TenantTestCase
 {
     use RefreshDatabase;
 

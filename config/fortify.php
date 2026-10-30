@@ -73,7 +73,7 @@ return [
     |
     */
 
-    'home' => '/dashboard',
+    'home' => '/app/dashboard',
 
     /*
     |--------------------------------------------------------------------------
@@ -101,7 +101,9 @@ return [
     |
     */
 
-    'middleware' => ['web'],
+    // Fortify routes are required inside the tenant route group (routes/tenant.php),
+    // which already applies tenant → web → tenant.session.
+    'middleware' => [],
 
     /*
     |--------------------------------------------------------------------------
@@ -161,7 +163,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // No public self-registration: school staff invite users (Milestone 2).
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
@@ -169,9 +171,8 @@ return [
             'confirmPassword' => true,
             // 'window' => 0
         ]),
-        Features::passkeys([
-            'confirmPassword' => true,
-        ]),
+        // Passkeys are disabled for now: the relying party must be the school's
+        // host, which needs per-tenant configuration (see docs/roadmap.md).
     ],
 
 ];
