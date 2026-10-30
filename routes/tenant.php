@@ -6,6 +6,8 @@ use App\Http\Controllers\Tenant\PublicHomeController;
 use App\Modules\Academics\Http\Controllers\AcademicsController;
 use App\Modules\Academics\Http\Controllers\ClassSubjectController;
 use App\Modules\Admissions\Http\Controllers\AdmissionController;
+use App\Modules\Attendance\Http\Controllers\AttendanceController;
+use App\Modules\Homework\Http\Controllers\HomeworkController;
 use App\Modules\Admissions\Http\Controllers\PublicAdmissionController;
 use App\Modules\Imports\Http\Controllers\ImportController;
 use App\Modules\People\Http\Controllers\GuardianController;
@@ -14,6 +16,9 @@ use App\Modules\People\Http\Controllers\StaffController;
 use App\Modules\People\Http\Controllers\StudentController;
 use App\Modules\Setup\Http\Controllers\CampusController;
 use App\Modules\Setup\Http\Controllers\SetupController;
+use App\Modules\Teaching\Http\Controllers\AssignmentController;
+use App\Modules\Teaching\Http\Controllers\CalendarController;
+use App\Modules\Teaching\Http\Controllers\TimetableController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -100,6 +105,37 @@ Route::middleware(['auth:web', 'active', 'verified'])->prefix('app')->group(func
     Route::get('imports/{import}', [ImportController::class, 'show'])->name('imports.show');
     Route::post('imports/{import}/confirm', [ImportController::class, 'confirm'])->name('imports.confirm');
     Route::get('imports/{import}/errors', [ImportController::class, 'errors'])->name('imports.errors');
+
+    // Milestone 3: academic operations
+    Route::get('assignments', [AssignmentController::class, 'index'])->name('assignments.index');
+    Route::post('assignments', [AssignmentController::class, 'store'])->name('assignments.store');
+    Route::delete('assignments/{assignment}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
+
+    Route::get('timetable', [TimetableController::class, 'index'])->name('timetable.index');
+    Route::get('timetable/mine', [TimetableController::class, 'mine'])->name('timetable.mine');
+    Route::post('timetable', [TimetableController::class, 'store'])->name('timetable.store');
+    Route::put('timetable/{routine}', [TimetableController::class, 'update'])->name('timetable.update');
+    Route::delete('timetable/{routine}', [TimetableController::class, 'destroy'])->name('timetable.destroy');
+
+    Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::post('calendar/holidays', [CalendarController::class, 'storeHoliday'])->name('calendar.holidays.store');
+    Route::put('calendar/holidays/{holiday}', [CalendarController::class, 'updateHoliday'])->name('calendar.holidays.update');
+    Route::delete('calendar/holidays/{holiday}', [CalendarController::class, 'destroyHoliday'])->name('calendar.holidays.destroy');
+    Route::put('calendar/settings', [CalendarController::class, 'updateSettings'])->name('calendar.settings');
+
+    Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('attendance/take', [AttendanceController::class, 'take'])->name('attendance.take');
+    Route::post('attendance', [AttendanceController::class, 'store'])->name('attendance.store');
+    Route::post('attendance/marks/{mark}/correct', [AttendanceController::class, 'correct'])->name('attendance.correct');
+    Route::get('attendance/report', [AttendanceController::class, 'report'])->name('attendance.report');
+
+    Route::get('homework', [HomeworkController::class, 'index'])->name('homework.index');
+    Route::get('homework/create', [HomeworkController::class, 'create'])->name('homework.create');
+    Route::post('homework', [HomeworkController::class, 'store'])->name('homework.store');
+    Route::get('homework/{homework}', [HomeworkController::class, 'show'])->name('homework.show');
+    Route::post('homework/{homework}', [HomeworkController::class, 'update'])->name('homework.update'); // POST: multipart with file
+    Route::post('homework/{homework}/grade', [HomeworkController::class, 'grade'])->name('homework.grade');
+    Route::get('homework/{homework}/attachment', [HomeworkController::class, 'attachment'])->name('homework.attachment');
 });
 
 require __DIR__.'/settings.php';

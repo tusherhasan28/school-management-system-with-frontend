@@ -5,7 +5,8 @@ gets its own subdomain (`{school}.your-domain`) with an admin panel, portals and
 public website, all in Bangla and English, with strict data isolation between
 schools.
 
-**Status:** Milestones 1 (foundation and tenancy) and 2 (school setup and people) complete. See
+**Status:** Milestones 1 (foundation and tenancy), 2 (school setup and people) and 3
+(academic operations: teacher assignments, timetable, calendar, attendance, homework) complete. See
 [`docs/roadmap.md`](docs/roadmap.md) for what is built and what comes next.
 
 ## Stack
@@ -47,11 +48,13 @@ then `php artisan serve` and open, for example, `http://dhaka-model.schoolsaas.t
 |---|---|
 | `admin.schoolsaas.test/platform/login` | `owner@schoolsaas.test` |
 | `dhaka-model.schoolsaas.test/login` | `principal@dhaka-model.test` |
+| `dhaka-model.schoolsaas.test/login` (class teacher of 6-A, Math for Class 6) | `salma@dhaka-model.test` |
 | `ctg-madrasa.schoolsaas.test/login` | `principal@ctg-madrasa.test` |
 
 Dhaka Model School is seeded with a finished setup (session 2026, classes 1–10 with
-sections A/B, subjects), four students (two siblings sharing a guardian), a teacher and
-one admission application. A pending school registration waits in the platform admin.
+sections A/B, subjects), four students (two siblings sharing a guardian), a teacher
+with class-teacher and subject assignments, a Sunday–Thursday timetable, two holidays,
+one homework and one admission application. A pending school registration waits in the platform admin.
 The public admission form is at `dhaka-model.schoolsaas.test/admission`.
 
 ### Useful commands

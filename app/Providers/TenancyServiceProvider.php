@@ -23,6 +23,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->app->scoped(TenantContext::class);
         $this->app->scoped(TenantCache::class);
         $this->app->scoped(TenantStorage::class);
+        $this->app->scoped(\App\Modules\Teaching\Services\TeachingScope::class);
 
         // Load Laravel's (deferred) password reset provider now so our manager
         // replaces its binding instead of being replaced by it later.

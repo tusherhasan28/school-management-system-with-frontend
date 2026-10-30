@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ClipboardList, GraduationCap, ListChecks, UserRound } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, GraduationCap, ListChecks, UserRound } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
@@ -14,10 +14,11 @@ type Props = {
     stats: { students: number | null; staff: number | null; pendingAdmissions: number | null };
     byClass: { name: string; total: number }[];
     setup: { completed: string[]; finished_at: string | null } | null;
+    attendanceToday: { date: string; closed: string | null; sections: number; finalized: number; present: number; absent: number } | null;
     recentActivity: { id: number; action: string; user: string | null; created_at: string | null }[];
 };
 
-export default function Dashboard({ session, stats, byClass, setup, recentActivity }: Props) {
+export default function Dashboard({ session, stats, byClass, setup, attendanceToday, recentActivity }: Props) {
     const t = useT();
     const { auth, locale, school } = usePage().props;
     const nf = new Intl.NumberFormat(locale === 'bn' ? 'bn-BD' : 'en-BD');
@@ -45,6 +46,15 @@ export default function Dashboard({ session, stats, byClass, setup, recentActivi
                     {stats.students !== null && <StatCard label={t('Active students')} value={nf.format(stats.students)} icon={GraduationCap} />}
                     {stats.staff !== null && <StatCard label={t('Teachers & staff')} value={nf.format(stats.staff)} icon={UserRound} tone="success" />}
                     {stats.pendingAdmissions !== null && <StatCard label={t('Applications to review')} value={nf.format(stats.pendingAdmissions)} icon={ClipboardList} tone="warning" />}
+                    {attendanceToday && (
+                        <StatCard
+                            label={t('Attendance today')}
+                            value={attendanceToday.closed ? '—' : t(':done of :total sections', { done: nf.format(attendanceToday.finalized), total: nf.format(attendanceToday.sections) })}
+                            hint={attendanceToday.closed ?? t(':present present · :absent absent', { present: nf.format(attendanceToday.present), absent: nf.format(attendanceToday.absent) })}
+                            icon={ClipboardCheck}
+                            tone={attendanceToday.absent > 0 ? 'danger' : 'success'}
+                        />
+                    )}
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-5">

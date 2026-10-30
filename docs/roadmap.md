@@ -48,10 +48,17 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ Horizon restricted to the admin host and platform owners/admins
 - ✅ 148 automated tests (51 new for this milestone)
 
-## Milestone 3 — Academic operations ⬜
-Teacher assignments (resource-level access), timetable, calendar/holidays/working
-days, attendance sessions (daily/period, duplicates rejected, corrections audited),
-homework + submissions.
+## Milestone 3 — Academic operations ✅
+- ✅ Teacher assignments per session: class teacher (one per section) and subject teacher (whole class or one section; subject must be mapped to the class); only active teaching staff
+- ✅ Resource-level access via `TeachingScope`: teachers see students, attendance and homework only for their current-session assignments; disabled staff lose access; `attendance.view_all` / `homework.view_all` for leadership
+- ✅ Class timetable (ISO weekdays) with section, teacher and room clash checks; teacher's own weekly timetable; class derived from the section, never the form
+- ✅ School calendar: configurable weekly off-days (default Friday), holidays (single or multi-day, typed), working-day count per year
+- ✅ Attendance: daily (class teacher) and per-period (subject teacher of that routine) sessions; one session per section/date/period at DB level; future dates, off-days and holidays rejected; only enrolled students on that date; draft → finalize; changes after finalizing are append-only corrections with reason and an audit entry
+- ✅ Optional queued email to the primary guardian on absence (tenant-aware job; off by default)
+- ✅ Monthly attendance report per section and per-student attendance summary on the profile; today's progress on the dashboard
+- ✅ Homework with private attachment (`schools/{id}/homework/…`), per-student submission rows, grading with max-marks check, setter taken from the signed-in user
+- ✅ Bangla translations for every new screen; dates follow the active language and school timezone
+- ✅ 178 automated tests (30 new for this milestone)
 
 ## Milestone 4 — Examinations ⬜
 Exam types and schedules, configurable components, marks entry/verification,
@@ -79,10 +86,13 @@ provider abstraction with Bangla/English templates and delivery logs.
 Isolation review, authorization review, load test, query tuning, backup/restore
 drill, pilot onboarding, production deployment guide.
 
-## Known limitations after Milestone 2
+## Known limitations after Milestone 3
+- Students cannot submit homework themselves yet; teachers record submission status. Student/parent portals arrive in Milestone 6.
+- Absence alerts are email only. SMS needs the provider abstraction in Milestone 7.
+- Attendance is per day or per routine period; there is no hourly/biometric import.
+- Timetable has no substitute-teacher workflow or printable PDF yet.
 - Imports cover students (with one guardian per row). Staff and guardian-only imports are not built yet.
 - Student photos and document uploads are not built yet (storage helpers exist).
-- Teachers do not yet see "their" classes: teacher–class–subject assignments arrive in Milestone 3, so the Teacher role has no student access for now.
 - No custom roles UI yet; schools use the default roles (`tenancy:sync-permissions` keeps them current).
 - Passkeys disabled (relying-party id must be per school host).
 - Starter-kit settings pages (profile, password, 2FA, appearance) are still English-only.
@@ -91,6 +101,14 @@ drill, pilot onboarding, production deployment guide.
 - No plans/subscriptions yet: school status is changed manually by platform admins.
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.
+
+## Test coverage (Milestone 3 additions)
+| Area | File |
+|---|---|
+| Daily/period sessions, duplicates, finalize, corrections + audit, future/off-day/holiday rules, roster by enrolment date, absent-guardian job, cross-school | `tests/Feature/Attendance/AttendanceTest.php` |
+| Class vs subject teacher, other sections 403, students limited to assignments, last session ignored, disabled staff, section order | `tests/Feature/Teaching/TeacherAccessTest.php` |
+| Assignment rules, timetable clashes, own timetable, calendar settings/holidays permissions, cross-school IDs | `tests/Feature/Teaching/TimetableAndAssignmentTest.php` |
+| Homework scope, private attachment + download isolation, roster rows, grading limits, setter from user, list scoping | `tests/Feature/Homework/HomeworkTest.php` |
 
 ## Test coverage (Milestone 2 additions)
 | Area | File |

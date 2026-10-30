@@ -23,8 +23,12 @@ final class TenantPermissions
             'guardians.view', 'guardians.manage',
             'staff.view', 'staff.manage',
             'admissions.manage', 'imports.manage',
+            'assignments.manage', 'timetable.view', 'timetable.manage', 'calendar.manage',
+            // attendance.mark / homework.manage are limited to the teacher's own
+            // assignments unless the user also has the *.view_all permission.
+            'attendance.mark', 'attendance.correct', 'attendance.view_all',
+            'homework.manage', 'homework.view_all',
             // Declared now so roles are stable; enforced as modules land.
-            'attendance.mark', 'attendance.correct',
             'marks.enter', 'results.publish', 'fees.collect', 'fees.refund',
             'notices.manage', 'website.manage',
         ];
@@ -41,18 +45,21 @@ final class TenantPermissions
             'Principal' => [
                 'dashboard.view', 'campuses.view', 'audit.view', 'academics.view', 'academics.manage',
                 'students.view', 'students.export', 'students.promote', 'guardians.view', 'staff.view',
-                'admissions.manage', 'attendance.correct', 'results.publish', 'notices.manage',
+                'admissions.manage', 'assignments.manage', 'timetable.view', 'timetable.manage', 'calendar.manage',
+                'attendance.mark', 'attendance.correct', 'attendance.view_all', 'homework.view_all',
+                'results.publish', 'notices.manage',
             ],
             'Accountant' => ['dashboard.view', 'students.view', 'guardians.view', 'fees.collect', 'fees.refund'],
             'Admission Officer' => [
                 'dashboard.view', 'academics.view', 'students.view', 'students.create', 'students.update',
                 'guardians.view', 'guardians.manage', 'admissions.manage', 'imports.manage',
             ],
-            'Teacher' => ['dashboard.view', 'academics.view', 'attendance.mark', 'marks.enter'],
-            'Class Teacher' => ['dashboard.view', 'academics.view', 'students.view', 'guardians.view', 'attendance.mark', 'attendance.correct', 'marks.enter'],
+            // Teachers see students only through their class/subject assignments (TeachingScope).
+            'Teacher' => ['dashboard.view', 'academics.view', 'timetable.view', 'attendance.mark', 'homework.manage', 'marks.enter'],
+            'Class Teacher' => ['dashboard.view', 'academics.view', 'timetable.view', 'attendance.mark', 'attendance.correct', 'homework.manage', 'marks.enter'],
             'Librarian' => ['dashboard.view'],
             'Transport Manager' => ['dashboard.view'],
-            'Receptionist' => ['dashboard.view', 'students.view', 'guardians.view', 'admissions.manage'],
+            'Receptionist' => ['dashboard.view', 'students.view', 'guardians.view', 'admissions.manage', 'timetable.view'],
             'Student' => [],
             'Parent' => [],
         ];

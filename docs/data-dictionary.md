@@ -160,6 +160,56 @@ Public registration requests: institution and contact details, `requested_slug`,
 `status` (pending/approved/rejected), `reviewed_by` (platform user), `reviewed_at`,
 `rejection_reason`, `school_id` once approved.
 
+## Academic operations (Milestone 3)
+
+### `teacher_assignments`
+`academic_session_id`, `staff_member_id`, `class_id`, `section_id` (null = every
+section of the class), `subject_id` (null for class teachers), `assignment_type`
+(class_teacher/subject_teacher). Composite FKs to the same school. One class teacher
+per section and no duplicate rows (checked in `AssignmentService`). This table drives
+`TeachingScope`, which limits what a teacher can see.
+
+### `class_routines`
+Timetable periods: `academic_session_id`, `class_id` + `section_id` (FK to
+`sections(school_id, class_id, id)`), `subject_id`, optional `staff_member_id`,
+`day_of_week` (ISO-8601, 1 = Monday … 7 = Sunday), `starts_at`, `ends_at`, `room`.
+Overlaps for the same section, teacher or room on the same day are rejected.
+
+### `holidays`
+`name`, `name_bn`, `start_date`, `end_date` (inclusive), `holiday_type`
+(public/religious/school/exam_break/other). Weekly off-days are a school setting
+(`calendar.weekend_days`, default `[5]` = Friday), not rows.
+
+### `attendance_sessions`
+One register per section, date and period: `academic_session_id`, `class_id`,
+`section_id`, `attendance_date`, `period_key` (`daily` or `routine:{id}`), optional
+`class_routine_id`, `taken_by`, `finalized_at`, `finalized_by`.
+`UNIQUE (school_id, section_id, attendance_date, period_key)`.
+
+### `student_attendance`
+`attendance_session_id`, `student_id`, `status`
+(present/absent/late/leave/half_day), `remarks`.
+`UNIQUE (school_id, attendance_session_id, student_id)`. Editable while the session is
+a draft; after finalizing, changes go through `attendance_corrections`.
+
+### `attendance_corrections`
+Append-only: `student_attendance_id`, `old_status`, `new_status`, `reason`,
+`corrected_by`, `created_at`. Each correction is also written to `activity_logs`.
+Attendance rate = (present + late + ½ half_day) ÷ (marked − leave).
+
+### `homework`
+`academic_session_id`, `class_id`, `section_id` (null = whole class), `subject_id`,
+`staff_member_id` (always the signed-in teacher's staff record), `title`,
+`instructions`, `attachment_path` (private disk, `schools/{id}/homework/`),
+`attachment_name`, `assigned_on`, `due_at`, `max_marks` DECIMAL(7,2), `status`
+(draft/published/closed).
+
+### `homework_submissions`
+One row per enrolled student when homework is set: `homework_id`, `student_id`
+(unique pair), `status` (pending/submitted/late/graded/missing), `submitted_at`,
+`submission_text`, `attachment_path` (reserved for the student portal), `marks`
+(≤ `max_marks`), `feedback`, `graded_by`, `graded_at`.
+
 ## Framework tables
 `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`
 (Laravel defaults; production uses Redis for sessions, cache and queues).

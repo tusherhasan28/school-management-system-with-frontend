@@ -26,6 +26,9 @@ app/
     People/               Students, guardians, enrollments, staff; promotion lifecycle
     Admissions/           Public applications, review, conversion
     Imports/              CSV/XLSX import (reader, validation, queued job)
+    Teaching/             Teacher assignments, TeachingScope/TeachingAccess, timetable, calendar
+    Attendance/           Attendance sessions, marks, corrections, absence notification job
+    Homework/             Homework, attachments, submissions and grading
   Support/Authorization/  TenantPolicy base (permission + same-school check)
   Services/Audit/         AuditLogger (tenant) and PlatformAuditLogger
 ```
@@ -143,6 +146,15 @@ administration under `/app` is the deliberate namespace that keeps both.
 - **Permissions**: Spatie Laravel Permission with *teams* enabled; team key is
   `school_id`. Roles are per school (School Owner, Principal, Teacher, ...). Platform
   roles use the `platform` guard with a null team.
+- **Resource-level access for teachers** (Milestone 3): role permissions say *what*
+  a teacher may do (`attendance.mark`, `homework.create`); `TeachingScope` says
+  *where*, using the teacher's assignments in the current session. Lists are
+  constrained in the query (`TeachingScope::constrain`), single records are checked
+  in policies (`StudentPolicy::view`) and in `TeachingAccess`
+  (`canTakeDaily` = class teacher of that section, `canTakePeriod` = teacher of that
+  routine). Records outside the scope return 403 or 404, never a filtered page that
+  reveals they exist. Leadership roles bypass the scope through `attendance.view_all`
+  / `homework.view_all`. Teacher roles no longer carry `students.view`.
 - **Support access to tenant data** (Milestone 7): a `support_access_grants` row with
   reason, expiry and approver; every access is audited.
 

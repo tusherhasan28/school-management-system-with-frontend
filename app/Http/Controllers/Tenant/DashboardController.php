@@ -4,6 +4,10 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Modules\Academics\Models\Section;
+use App\Modules\Attendance\Models\AttendanceSession;
+use App\Modules\Attendance\Models\StudentAttendance;
+use App\Modules\Teaching\Services\SchoolCalendar;
 use App\Modules\Academics\Models\AcademicSession;
 use App\Modules\Admissions\Models\AdmissionApplication;
 use App\Modules\People\Models\StaffMember;
@@ -17,7 +21,7 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, SetupWizard $setup): Response
+    public function __invoke(Request $request, SetupWizard $setup, SchoolCalendar $calendar): Response
     {
         $user = $request->user();
         $session = AcademicSession::query()->where('is_current', true)->first(['id', 'name']);
@@ -44,6 +48,7 @@ class DashboardController extends Controller
                 'pendingAdmissions' => $user->can('admissions.manage') ? AdmissionApplication::query()->whereIn('status', ['submitted', 'under_review'])->count() : null,
             ],
             'byClass' => $byClass,
+            'attendanceToday' => $user->can('attendance.view_all') ? $this->attendanceToday($calendar) : null,
             'setup' => $user->can('settings.manage') && ! $setup->isFinished() ? $setup->progress() : null,
             'recentActivity' => $user->can('audit.view')
                 ? ActivityLog::query()->with('user:id,name,school_id')->latest('id')->limit(6)->get()
@@ -55,5 +60,28 @@ class DashboardController extends Controller
                     ])
                 : [],
         ]);
+    }
+
+    /**
+     * @return array{date: string, closed: string|null, sections: int, finalized: int, present: int, absent: int}
+     */
+    private function attendanceToday(SchoolCalendar $calendar): array
+    {
+        $today = $calendar->today();
+        $sessions = AttendanceSession::query()->whereDate('attendance_date', $today->toDateString())->where('period_key', 'daily');
+
+        $marks = StudentAttendance::query()
+            ->whereIn('attendance_session_id', (clone $sessions)->select('id'))
+            ->selectRaw("SUM(status IN ('present','late','half_day')) as present, SUM(status = 'absent') as absent")
+            ->first();
+
+        return [
+            'date' => $today->toDateString(),
+            'closed' => $calendar->closedReason($today),
+            'sections' => Section::query()->where('is_active', true)->count(),
+            'finalized' => (clone $sessions)->whereNotNull('finalized_at')->count(),
+            'present' => (int) ($marks->present ?? 0),
+            'absent' => (int) ($marks->absent ?? 0),
+        ];
     }
 }

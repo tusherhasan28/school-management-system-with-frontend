@@ -83,16 +83,57 @@ class DatabaseSeeder extends Seeder
             $students->create(
                 ['full_name' => $name, 'name_bn' => $bn, 'gender' => $gender, 'date_of_birth' => '2014-0'.($i + 1).'-15'],
                 [['full_name' => $guardian, 'phone' => $phone, 'relationship' => 'father']],
-                ['academic_session_id' => $session->id, 'class_id' => $class6->id, 'section_id' => $sectionA->id, 'roll_no' => (string) ($i + 1)],
+                ['academic_session_id' => $session->id, 'class_id' => $class6->id, 'section_id' => $sectionA->id, 'roll_no' => (string) ($i + 1), 'enrolled_at' => '2026-01-01'],
             );
         }
 
-        app(StaffService::class)->create(['staff_type' => 'teacher', 'full_name' => 'Salma Begum', 'name_bn' => 'সালমা বেগম', 'gender' => 'female', 'designation' => 'Assistant Teacher', 'phone' => '01744444444', 'email' => 'salma@dhaka-model.test']);
+        $salma = app(StaffService::class)->create(['staff_type' => 'teacher', 'full_name' => 'Salma Begum', 'name_bn' => 'সালমা বেগম', 'gender' => 'female', 'designation' => 'Assistant Teacher', 'phone' => '01744444444', 'email' => 'salma@dhaka-model.test'], 'Class Teacher');
+        // Demo only: activate the teacher login directly (normally via the emailed invitation).
+        $salma->user->forceFill(['password' => 'password', 'status' => 'active', 'email_verified_at' => now()])->save();
+
+        $this->seedOperations($session, $class6, $sectionA, $salma);
 
         app(AdmissionService::class)->submit([
             'applied_class_id' => $class6->id, 'applicant_name' => 'Imran Kabir', 'applicant_name_bn' => 'ইমরান কবির',
             'date_of_birth' => '2014-09-02', 'gender' => 'male', 'guardian_name' => 'Humayun Kabir', 'guardian_relationship' => 'father',
             'guardian_phone' => '01755555555', 'address' => 'Uttara, Dhaka',
+        ]);
+    }
+
+    private function seedOperations(\App\Modules\Academics\Models\AcademicSession $session, SchoolClass $class6, \App\Modules\Academics\Models\Section $sectionA, \App\Modules\People\Models\StaffMember $salma): void
+    {
+        $subjects = \App\Modules\Academics\Models\Subject::query()->pluck('id', 'code');
+
+        foreach ($subjects as $code => $id) {
+            \App\Modules\Academics\Models\ClassSubject::create(['academic_session_id' => $session->id, 'class_id' => $class6->id, 'subject_id' => $id, 'full_marks' => 100, 'pass_marks' => 33]);
+        }
+
+        $assignments = app(\App\Modules\Teaching\Services\AssignmentService::class);
+        $assignments->assign(['academic_session_id' => $session->id, 'staff_member_id' => $salma->id, 'class_id' => $class6->id, 'section_id' => $sectionA->id, 'subject_id' => null, 'assignment_type' => 'class_teacher']);
+        $assignments->assign(['academic_session_id' => $session->id, 'staff_member_id' => $salma->id, 'class_id' => $class6->id, 'section_id' => null, 'subject_id' => $subjects['MATH'], 'assignment_type' => 'subject_teacher']);
+
+        $timetable = app(\App\Modules\Teaching\Services\TimetableService::class);
+        $slots = [['08:00', '08:45'], ['08:45', '09:30'], ['09:45', '10:30'], ['10:30', '11:15']];
+        $order = ['BAN', 'ENG', 'MATH', 'SCI'];
+
+        foreach ([7, 1, 2, 3, 4] as $day) { // Sunday–Thursday
+            foreach ($slots as $i => [$start, $end]) {
+                $code = $order[($i + $day) % 4];
+                $timetable->save([
+                    'academic_session_id' => $session->id, 'class_id' => $class6->id, 'section_id' => $sectionA->id,
+                    'subject_id' => $subjects[$code], 'staff_member_id' => $code === 'MATH' ? $salma->id : null,
+                    'day_of_week' => $day, 'starts_at' => $start, 'ends_at' => $end, 'room' => '6A',
+                ]);
+            }
+        }
+
+        \App\Modules\Teaching\Models\Holiday::create(['name' => 'Victory Day', 'name_bn' => 'বিজয় দিবস', 'start_date' => '2026-12-16', 'end_date' => '2026-12-16', 'holiday_type' => 'public']);
+        \App\Modules\Teaching\Models\Holiday::create(['name' => 'International Mother Language Day', 'name_bn' => 'আন্তর্জাতিক মাতৃভাষা দিবস', 'start_date' => '2026-02-21', 'end_date' => '2026-02-21', 'holiday_type' => 'public']);
+
+        app(\App\Modules\Homework\Services\HomeworkService::class)->create([
+            'academic_session_id' => $session->id, 'class_id' => $class6->id, 'section_id' => $sectionA->id, 'subject_id' => $subjects['MATH'],
+            'staff_member_id' => $salma->id, 'title' => 'Fractions — exercise 3.2', 'instructions' => 'Solve questions 1 to 10 in your notebook.',
+            'assigned_on' => now('Asia/Dhaka')->toDateString(), 'due_at' => now('Asia/Dhaka')->addDays(3)->setTime(9, 0), 'max_marks' => 10, 'status' => 'published',
         ]);
     }
 }

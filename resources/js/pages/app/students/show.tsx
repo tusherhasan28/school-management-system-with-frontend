@@ -34,10 +34,11 @@ type Props = {
         guardians: { id: number; full_name: string; name_bn: string | null; phone: string; email: string | null; occupation: string | null; relationship: string; is_primary: boolean }[];
         enrollments: { id: number; session: string; class: string; section: string | null; roll_no: string | null; status: string; enrolled_at: string; ended_at: string | null; end_reason: string | null }[];
     };
+    attendance: Record<string, number>;
     can: { update: boolean; changeStatus: boolean; manageGuardians: boolean };
 };
 
-export default function StudentShow({ student, can }: Props) {
+export default function StudentShow({ student, attendance, can }: Props) {
     const t = useT();
     const [linking, setLinking] = useState(false);
     const [ending, setEnding] = useState(false);
@@ -119,6 +120,15 @@ export default function StudentShow({ student, can }: Props) {
                         </ul>
                     </section>
                 </div>
+
+                <section className="rounded-xl border border-border/70 bg-card p-5">
+                    <h2 className="mb-3 font-medium">{t('Attendance this session')}</h2>
+                    <div className="flex flex-wrap gap-2 text-sm">
+                        {['present', 'absent', 'late', 'leave', 'half_day'].map((st) => (
+                            <span key={st} className="rounded-lg border px-3 py-1.5">{t(st)}: <b className="tabular-nums">{attendance[st] ?? 0}</b></span>
+                        ))}
+                    </div>
+                </section>
 
                 <section className="rounded-xl border border-border/70 bg-card">
                     <h2 className="border-b border-border/70 px-5 py-3 font-medium">{t('Enrollment history')}</h2>

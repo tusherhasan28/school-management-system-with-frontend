@@ -3,7 +3,9 @@
 namespace App\Modules\People\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Academics\Models\AcademicSession;
 use App\Modules\Academics\Services\AcademicOptions;
+use App\Modules\Attendance\Models\StudentAttendance;
 use App\Modules\People\Http\Requests\StudentRequest;
 use App\Modules\People\Models\Guardian;
 use App\Modules\People\Models\Student;
@@ -11,6 +13,7 @@ use App\Modules\People\Models\StudentEnrollment;
 use App\Modules\People\Services\EnrollmentLifecycle;
 use App\Modules\People\Services\GuardianService;
 use App\Modules\People\Services\StudentService;
+use App\Modules\Teaching\Services\TeachingScope;
 use App\Support\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,7 +44,15 @@ class StudentController extends Controller
         $sessionId = $filters['session'] ?? $this->options->currentSessionId();
 
         // Enrollment for the selected session, joined as a subquery-free relation load.
+        // Without students.view the list is limited to sections the user teaches.
+        $restrict = ! $request->user()->can('students.view');
+        $scope = app(TeachingScope::class);
+
         $students = Student::query()
+            ->when($restrict, fn ($q) => $q->whereHas('enrollments', fn ($q) => $scope->constrain(
+                $q->where('academic_session_id', $sessionId)->where('status', 'enrolled'),
+                $request->user(),
+            )))
             ->with(['enrollments' => fn ($q) => $q->where('academic_session_id', $sessionId)->with(['schoolClass:id,name,name_bn,school_id', 'section:id,name,school_id'])])
             ->when($filters['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q
                 ->where('full_name', 'like', "%{$s}%")->orWhere('name_bn', 'like', "%{$s}%")->orWhere('admission_no', 'like', "%{$s}%")))
@@ -137,6 +148,13 @@ class StudentController extends Controller
                     'end_reason' => $e->end_reason,
                 ]),
             ],
+            'attendance' => StudentAttendance::query()
+                ->where('student_id', $student->id)
+                ->whereHas('attendanceSession', fn ($q) => $q->where('period_key', 'daily')
+                    ->whereIn('academic_session_id', AcademicSession::query()->where('is_current', true)->select('id')))
+                ->selectRaw('status, COUNT(*) as total')
+                ->groupBy('status')
+                ->pluck('total', 'status'),
             'can' => [
                 'update' => $user->can('update', $student),
                 'changeStatus' => $user->can('changeStatus', $student),

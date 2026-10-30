@@ -58,6 +58,8 @@ class HandleInertiaRequests extends Middleware
                     'avatar' => null,
                 ] : null,
                 'permissions' => $user ? fn () => $user->getAllPermissions()->pluck('name')->values() : [],
+                // Linked to an active staff record (teachers get "My timetable").
+                'isStaff' => $user ? fn () => \App\Modules\People\Models\StaffMember::query()->where('user_id', $user->id)->where('status', 'active')->exists() : false,
                 'platformUser' => $platformUser ? [
                     'id' => $platformUser->id,
                     'name' => $platformUser->name,

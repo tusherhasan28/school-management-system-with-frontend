@@ -16,19 +16,20 @@ use Spatie\Permission\Models\Role;
  */
 class SyncTenantPermissions extends Command
 {
-    protected $signature = 'tenancy:sync-permissions';
+    protected $signature = 'tenancy:sync-permissions {--reset : Make default roles match the catalogue exactly (removes extra grants)}';
 
-    protected $description = 'Add new tenant permissions to every school\'s default roles (additive)';
+    protected $description = 'Add new tenant permissions to every school\'s default roles (additive unless --reset)';
 
     public function handle(SchoolProvisioner $provisioner, TenantContext $tenant): int
     {
         $provisioner->ensurePermissions();
 
         School::query()->orderBy('id')->each(function (School $school) use ($tenant) {
-            $tenant->run($school, function () {
+            $tenant->run($school, function () use ($tenant) {
                 foreach (TenantPermissions::defaultRoles() as $name => $grants) {
                     $role = Role::findOrCreate($name, 'web');
-                    $role->givePermissionTo($grants === '*' ? TenantPermissions::all() : $grants);
+                    $permissions = $grants === '*' ? TenantPermissions::all() : $grants;
+                    $this->option('reset') ? $role->syncPermissions($permissions) : $role->givePermissionTo($permissions);
                 }
             });
 
