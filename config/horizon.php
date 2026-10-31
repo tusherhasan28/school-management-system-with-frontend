@@ -99,6 +99,7 @@ return [
 
     'waits' => [
         'redis:default' => 60,
+        'redis:messages' => 300,
     ],
 
     /*

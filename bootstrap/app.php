@@ -30,6 +30,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->domain(config('tenancy.admin_subdomain').'.'.$domain)
                 ->get('/', fn () => redirect('/platform/dashboard'));
 
+            // Uptime-monitor endpoint: token-protected, no session or cookies.
+            Route::domain(config('tenancy.admin_subdomain').'.'.$domain)
+                ->middleware('throttle:60,1')
+                ->get('/ops/health', \App\Http\Controllers\Ops\HealthController::class)
+                ->name('ops.health');
+
             Route::middleware(['platform.host', 'web'])->group(base_path('routes/platform.php'));
 
             // Tenant routes match any other host; ResolveTenant 404s unknown hosts.

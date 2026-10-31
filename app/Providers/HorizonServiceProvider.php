@@ -12,6 +12,12 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        // Long-wait alerts (see 'waits' in config/horizon.php) go to the ops inbox.
+        $alertTo = array_values(array_filter(array_map('trim', explode(',', (string) config('ops.alert_email')))));
+        if ($alertTo !== []) {
+            Horizon::routeMailNotificationsTo($alertTo[0]);
+        }
     }
 
     /**
