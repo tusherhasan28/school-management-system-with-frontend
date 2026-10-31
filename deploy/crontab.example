@@ -1,0 +1,7 @@
+# crontab -u deploy -e
+# Laravel scheduler: late fees, billing, payment reconciliation, health checks.
+* * * * * cd /var/www/school-saas/current && php artisan schedule:run >> /dev/null 2>&1
+
+# crontab -u root -e   (or a dedicated backup user that can read the passphrase)
+# Daily encrypted backup at 02:40 Asia/Dhaka (server clock in UTC: 20:40).
+40 20 * * * /var/www/school-saas/current/scripts/backup.sh >> /var/log/school-saas-backup.log 2>&1

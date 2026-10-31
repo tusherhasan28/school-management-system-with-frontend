@@ -25,6 +25,8 @@ MySQL 8 · Redis + Horizon · Spatie Permission (teams) · Fortify · Recharts �
 - [Data dictionary](docs/data-dictionary.md)
 - [Review of the baseline SQL schema](docs/schema-review.md)
 - [Roadmap, checklist and known limitations](docs/roadmap.md)
+- [Production deployment guide](docs/deployment.md) · [Operations: backups, restore, monitoring](docs/operations.md)
+- [Pilot school onboarding](docs/pilot-onboarding.md) · [Security and isolation review](docs/security-review.md) · [Performance and load test](docs/performance.md)
 
 ## Local setup
 
@@ -82,6 +84,8 @@ php artisan tenancy:sync-permissions   # after adding permissions/roles in Tenan
 php artisan test                 # runs against the school_saas_test MySQL database
 npm run types:check
 php artisan horizon              # queue workers (Redis): imports, emails, SMS and exports need a worker (queues: default, messages)
+php artisan school:readiness my-school   # go-live checklist for a school
+php artisan ops:health           # database, cache, queues, failed jobs, Horizon, scheduler, backups, disk
 php artisan schedule:work        # local scheduler: late fees and billing:run (daily), payment reconciliation (15 min)
 ```
 
@@ -92,3 +96,5 @@ php artisan schedule:work        # local scheduler: late fees and billing:run (d
 - Never commit `.env`; payment, SMS and mail credentials go in environment variables
   or per-school encrypted integration settings (Milestone 5/7).
 - The seeder refuses to run outside `local`/`testing`.
+- Full guide: [docs/deployment.md](docs/deployment.md) (nginx, php-fpm, Horizon,
+  cron, `scripts/deploy.sh`, encrypted backups with `scripts/backup.sh`, go-live checklist).

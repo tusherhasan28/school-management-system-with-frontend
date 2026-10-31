@@ -1,0 +1,65 @@
+# /etc/nginx/sites-available/school-saas — replace example.com.bd with APP_DOMAIN.
+# One server block serves the marketing site (example.com.bd), the platform
+# admin (admin.example.com.bd) and every school (*.example.com.bd); Laravel
+# decides which by host. TLS: one wildcard certificate via DNS-01 (see
+# docs/deployment.md).
+
+limit_req_zone $binary_remote_addr zone=perip:10m rate=20r/s;
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name example.com.bd *.example.com.bd;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name example.com.bd *.example.com.bd;
+
+    ssl_certificate     /etc/letsencrypt/live/example.com.bd/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com.bd/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+
+    root /var/www/school-saas/current/public;
+    index index.php;
+    charset utf-8;
+
+    # Uploads: imports (10 MB), documents and media; keep in line with PHP's
+    # upload_max_filesize / post_max_size.
+    client_max_body_size 20m;
+
+    # Security headers come from the app (SecurityHeaders middleware) so they
+    # carry the per-request CSP nonce; do not duplicate them here.
+    server_tokens off;
+
+    location / {
+        limit_req zone=perip burst=40 nodelay;
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # Hashed Vite assets: cache for a year.
+    location /build/ {
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php/php8.3-fpm-school-saas.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+        fastcgi_read_timeout 60s;
+    }
+
+    # Never serve dotfiles (.env, .git) or anything outside public/.
+    location ~ /\.(?!well-known).* { deny all; }
+}

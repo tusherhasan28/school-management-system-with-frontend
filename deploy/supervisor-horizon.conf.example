@@ -1,0 +1,12 @@
+; /etc/supervisor/conf.d/school-saas-horizon.conf
+[program:school-saas-horizon]
+process_name=%(program_name)s
+command=php /var/www/school-saas/current/artisan horizon
+user=deploy
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stopwaitsecs=3600
+redirect_stderr=true
+stdout_logfile=/var/www/school-saas/shared/storage/logs/horizon.log

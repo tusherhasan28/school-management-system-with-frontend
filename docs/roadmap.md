@@ -117,11 +117,20 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ Retention and export policy: `docs/retention-policy.md`
 - ✅ 302 automated tests (33 new for this milestone)
 
-## Milestone 8 — Hardening ⬜
-Isolation review, authorization review, load test, query tuning, backup/restore
-drill, pilot onboarding, production deployment guide.
+## Milestone 8 — Hardening ✅
+- ✅ Tenant isolation review: every table classified and checked for `school_id`, FK and composite key; every tenant model fail-closed; route middleware audit; cross-tenant sweep of every id-taking route as owner, teacher, parent and student (137 calls, all refused, other school unchanged); foreign ids in request bodies rejected — **no leak found** (`docs/security-review.md`)
+- ✅ Authorization review: no-role sweep of every `/app` screen; attendance and support actions now authorize before validating
+- ✅ Security headers: CSP with per-request nonce, frame/referrer/permissions policies, HSTS + COOP on HTTPS; appearance-cookie injection closed; sensitive fields never flashed to the session
+- ✅ Query review: no N+1 on the busy screens (query counts flat from 3 to 33 students, enforced by test); DATE filters use indexes; fees dashboard totals in SQL; UI translations sent once per session (navigation payload ~125 KB → 3–7 KB)
+- ✅ Load test on a 1,500-student school (90,000 attendance marks): 8 concurrent users, 18.7 req/s, 0 errors, p95 < 1 s on 2 shared vCPUs (`docs/performance.md`)
+- ✅ Encrypted daily backups (DB + files, AES-256, checksums, off-server copy via rclone, retention) and a restore script that proves the copy with per-table row counts and checksums; restore drill recorded (`docs/operations.md`)
+- ✅ Monitoring: `ops:health` every 5 minutes (database, cache, queue backlog, failed jobs, Horizon, scheduler heartbeat, backup age, disk) with throttled alert/recovery emails; token-protected `/ops/health` for uptime monitors; Horizon long-wait alerts
+- ✅ Bangla in printed PDFs verified: receipt and report card printed to PDF through Chromium embed Hind Siliguri with correct conjuncts
+- ✅ Pilot onboarding: `school:readiness <slug>` go-live checklist and `docs/pilot-onboarding.md`
+- ✅ Production deployment guide (`docs/deployment.md`) with nginx (wildcard subdomains + wildcard TLS), php-fpm, Horizon supervisor, cron, `scripts/deploy.sh` and a go-live checklist
+- ✅ 319 automated tests (17 new for this milestone)
 
-## Known limitations after Milestone 7
+## Known limitations after Milestone 8
 - No online gateway adapter is installed: bKash, Nagad, Rocket and SSLCommerz need merchant credentials and current official documentation (open question 4). Mobile-banking payments are recorded manually with their transaction ID.
 - No advance/credit balance: a payment cannot exceed what is owed. An online payment that arrives after the invoice was settled in cash stays partly unallocated and is flagged for a manual refund.
 - Reversal/refund is for a whole payment; partial refunds are not supported. Refunding an online payment through the gateway is manual.
@@ -152,7 +161,23 @@ drill, pilot onboarding, production deployment guide.
 - The platform area has no in-app notification bell yet; platform staff see new tickets on the dashboard and support list.
 - Permanent deletion of an archived school is a manual platform operation (see retention policy).
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
+- Restore drill and load test were run in the development sandbox; repeat both on the production server before the first pilot school goes live (checklist in `docs/deployment.md`).
+- Two-factor login is optional for school admins and platform staff (`school:readiness` warns); no external penetration test yet; no error tracker bundled.
+- Restoring a single school from a backup is a careful manual procedure, not a button (`docs/operations.md`).
+- `composer audit` could only use cached package metadata in the sandbox; re-run it on a normal network.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.
+
+## Test coverage (Milestone 8 additions)
+| Area | File |
+|---|---|
+| Every table classified; tenant tables have school_id, FK and composite key; tenant models fail-closed with school_id not fillable; route middleware audit | `tests/Feature/Tenancy/IsolationAuditTest.php` |
+| Every id-taking route with another school's ids as owner, teacher, parent, student → 403/404, other school's data unchanged | `tests/Feature/Tenancy/CrossTenantSweepTest.php` |
+| Foreign ids in form fields and array keys rejected | `tests/Feature/Tenancy/BodyIdIsolationTest.php` |
+| Security headers, CSP nonce on every inline script, HSTS on HTTPS only, appearance-cookie injection | `tests/Feature/Security/SecurityHeadersTest.php` |
+| User without roles refused on every `/app` screen; authorize-before-validate | `tests/Feature/Security/AuthorizationSweepTest.php` |
+| Query counts flat as data grows on 9 busy screens | `tests/Feature/Performance/QueryScalingTest.php` |
+| Health checks, throttled alert and recovery mails, scheduler/backup age, token-protected endpoint, restore manifest verification | `tests/Feature/Ops/OpsHealthTest.php` |
+| Go-live readiness checklist; counts only, no personal data | `tests/Feature/Ops/SchoolReadinessTest.php` |
 
 ## Test coverage (Milestone 7 additions)
 | Area | File |

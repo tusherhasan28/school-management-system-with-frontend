@@ -1,0 +1,25 @@
+; /etc/php/8.3/fpm/pool.d/school-saas.conf
+[school-saas]
+user = deploy
+group = www-data
+listen = /run/php/php8.3-fpm-school-saas.sock
+listen.owner = www-data
+listen.group = www-data
+
+; ~2 workers per vCPU (see docs/performance.md); each uses ~40-60 MB.
+pm = dynamic
+pm.max_children = 8
+pm.start_servers = 4
+pm.min_spare_servers = 2
+pm.max_spare_servers = 6
+pm.max_requests = 1000
+
+php_admin_value[memory_limit] = 256M
+php_admin_value[upload_max_filesize] = 20M
+php_admin_value[post_max_size] = 22M
+php_admin_value[expose_php] = Off
+; OPcache: set in /etc/php/8.3/fpm/conf.d/10-opcache.ini
+;   opcache.enable=1
+;   opcache.memory_consumption=192
+;   opcache.max_accelerated_files=20000
+;   opcache.validate_timestamps=0   ; deploy.sh reloads php-fpm
