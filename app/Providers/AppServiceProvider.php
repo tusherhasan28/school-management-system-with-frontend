@@ -19,7 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // One registry of installed payment gateway adapters per process.
+        $this->app->singleton(\App\Modules\Finance\Gateways\GatewayRegistry::class);
     }
 
     /**

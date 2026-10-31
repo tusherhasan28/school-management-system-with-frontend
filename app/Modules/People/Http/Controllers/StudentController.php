@@ -156,12 +156,26 @@ class StudentController extends Controller
                 ->groupBy('status')
                 ->pluck('total', 'status'),
             'results' => $this->examResults($student, $user),
+            'fees' => $user->can('fees.view') || $user->can('fees.collect') ? $this->feeSummary($student) : null,
             'can' => [
                 'update' => $user->can('update', $student),
                 'changeStatus' => $user->can('changeStatus', $student),
                 'manageGuardians' => $user->can('update', $student) && $user->can('guardians.manage'),
             ],
         ]);
+    }
+
+    /** @return array{due: string, overdue: string, open: int} */
+    private function feeSummary(Student $student): array
+    {
+        $today = now(app(\App\Support\Tenancy\TenantContext::class)->require()->timezone)->toDateString();
+        $open = \App\Modules\Finance\Models\FeeInvoice::query()->where('student_id', $student->id)->open()->get();
+
+        return [
+            'due' => \App\Support\Money\Money::format($open->sum(fn ($i) => $i->balance())),
+            'overdue' => \App\Support\Money\Money::format($open->filter(fn ($i) => $i->isOverdue($today))->sum(fn ($i) => $i->balance())),
+            'open' => $open->count(),
+        ];
     }
 
     /**

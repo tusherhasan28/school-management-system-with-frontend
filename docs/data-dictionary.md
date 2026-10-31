@@ -273,6 +273,65 @@ Per student per calculation (`UNIQUE school_id, result_calculation_id, student_i
 `percentage`, `grade`, `grade_point`, `passed`, `components` JSON (part marks and
 pass/fail as used).
 
+## Finance (Milestone 5)
+
+Money is DECIMAL(12,2), computed in integer paisa (`App\Support\Money\Money`). No
+financial row is ever deleted.
+
+### `fee_categories`
+Fee heads: `name` (unique per school), `name_bn`, `description`, `is_active`, `sort_order`.
+
+### `fee_structures`
+Fee plans: `academic_session_id`, `class_id` (null = every class), `fee_category_id`,
+`name`, `amount`, `frequency` (one_time/monthly/quarterly/half_yearly/yearly),
+`start_period` (YYYY-MM first billing month), `applies_to` (class = every enrolled
+student; assigned = only students with an assignment), `is_active`.
+
+### `student_fee_assignments`
+`student_id`, `fee_structure_id` (unique pair), `custom_amount` (null = plan amount;
+0 waives a class fee), `note`, `is_active`. Opts a student into an assigned fee or
+overrides a class fee.
+
+### `fee_discounts`
+`student_id`, `academic_session_id`, `fee_category_id` (null = all heads), `name`,
+`kind` (percent/fixed), `value`, `is_active`, `created_by`. Applied per invoice line at
+generation; the total discount on a line never exceeds the line.
+
+### `fee_invoices`
+`invoice_no` (`INV-{year}-{seq:5}`, unique per school), `student_id`,
+`academic_session_id`, `class_id`/`section_id` (snapshot, composite section FK),
+`billing_period` (YYYY-MM or null for one-off), `generation_key` (`period:YYYY-MM`,
+`UNIQUE school_id, student_id, generation_key`, cleared on cancel), `issue_date`,
+`due_date`, cached `total` and `paid_total`, `status` (unpaid/partially_paid/paid/
+cancelled; overdue is derived), `notes`, `created_by`, `cancelled_at/by`,
+`cancel_reason`. Never deleted.
+
+### `fee_invoice_items`
+Append-only lines: `kind` (fee/late_fee/waiver/adjustment), `fee_category_id`,
+`fee_structure_id`, `description`, `amount`, `discount_amount`, `discount_note`,
+`line_total` (negative for waivers), `created_by`, `created_at`.
+
+### `fee_payments`
+`receipt_no` (`RCP-{year}-{seq:6}`, assigned on success), `student_id`, `method`
+(cash/bank/cheque/mobile_banking/online), `reference`, `gateway`,
+`gateway_transaction_id` (`UNIQUE gateway, gateway_transaction_id`), `public_id`
+(ULID sent to gateways), `idempotency_key` (unique per school), `amount`, `currency`,
+`status` (pending/successful/failed/cancelled), `received_at`, `received_by`,
+`gateway_payload` (sanitised: no keys that look like secrets, signatures, card data),
+`intended_allocations` (online), `notes`, `reconcile_attempts`. Immutable once successful.
+
+### `fee_payment_allocations`
+`fee_payment_id`, `fee_invoice_id` (unique pair), `amount`. Immutable.
+
+### `fee_payment_reversals`
+One per payment at most: `type` (reversal/refund), `amount`, `reason`,
+`refund_method`, `refund_reference`, `created_by`. A reversed payment's allocations
+stop counting towards invoice balances.
+
+### `payment_gateway_accounts`
+`gateway` (unique per school), `mode` (sandbox/live), `credentials` (encrypted JSON,
+hidden from serialization), `is_enabled`.
+
 ## Framework tables
 `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`
 (Laravel defaults; production uses Redis for sessions, cache and queues).

@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Award, BookOpen, Building2, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, FilePen, FileUp, GraduationCap, LayoutGrid, ListChecks, NotebookPen, Settings2, UserCog, UserRound, Users } from 'lucide-react';
+import { Award, Banknote, BookOpen, Building2, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, FilePen, FileUp, GraduationCap, LayoutGrid, ListChecks, NotebookPen, Settings2, UserCog, UserRound, Users } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -19,6 +19,7 @@ import { index as assignments } from '@/routes/assignments';
 import { index as attendance } from '@/routes/attendance';
 import { index as calendar } from '@/routes/calendar';
 import { index as exams, setup as examSetup } from '@/routes/exams';
+import { dashboard as fees } from '@/routes/fees';
 import { index as homework } from '@/routes/homework';
 import { index as marks } from '@/routes/marks';
 import { index as timetable, mine as myTimetable } from '@/routes/timetable';
@@ -40,6 +41,7 @@ export function AppSidebar() {
     const items: NavItem[] = [
         { title: t('Dashboard'), href: dashboard(), icon: LayoutGrid },
         ...when('admissions.manage', { title: t('Admissions'), href: admissions(), icon: ClipboardList }),
+        ...(can('fees.view') || can('fees.collect') ? [{ title: t('Fees'), href: fees(), icon: Banknote }] : []),
         ...when('students.view', { title: t('Students'), href: students(), icon: GraduationCap }),
         ...when('guardians.view', { title: t('Guardians'), href: guardians(), icon: Users }),
         ...when('staff.view', { title: t('Teachers & staff'), href: staff(), icon: UserRound }),

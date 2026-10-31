@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'no_session_for_period' => 'No academic session covers that month.',
+    'student_not_enrolled' => 'The student has no current enrollment.',
+    'amount_positive' => 'Enter an amount greater than zero.',
+    'invoice_cancelled' => 'This invoice is cancelled.',
+    'waiver_above_balance' => 'A waiver cannot be more than the balance still owed.',
+    'cancel_has_payments' => 'This invoice has payments. Reverse or refund them before cancelling.',
+    'reverse_not_successful' => 'Only a successful payment can be reversed or refunded.',
+    'already_reversed' => 'This payment has already been reversed or refunded.',
+    'invoice_not_open' => 'One of the invoices is not open for this student.',
+    'allocation_above_balance' => 'More than the balance due (:balance).',
+    'allocations_must_match' => 'The amounts per invoice must add up to the payment amount.',
+    'amount_above_due' => 'The amount is more than the total due (:due). Advance payments are not supported.',
+    'gateway_unavailable' => 'This online payment method is not available.',
+    'nothing_due' => 'Nothing is due on this invoice.',
+    'percent_max' => 'A percentage cannot be more than 100.',
+    'settings_saved' => 'Finance settings saved.',
+    'period_outside_session' => 'The first billing month must be within the session.',
+    'generated' => ':created invoices created; :existing already had one; :empty had no fees.',
+    'line_added' => 'Invoice updated.',
+    'invoice_cancelled_ok' => 'Invoice cancelled.',
+    'payment_recorded' => 'Payment recorded. Receipt :receipt.',
+    'payment_reversal_done' => 'Payment reversed.',
+    'payment_refund_done' => 'Refund recorded.',
+    'override_needs_amount' => 'Enter the amount this student pays for this class fee (0 to waive it).',
+];

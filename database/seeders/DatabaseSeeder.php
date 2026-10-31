@@ -93,6 +93,7 @@ class DatabaseSeeder extends Seeder
 
         $this->seedOperations($session, $class6, $sectionA, $salma);
         $this->seedExams($session, $class6);
+        $this->seedFees($session, $class6);
 
         app(AdmissionService::class)->submit([
             'applied_class_id' => $class6->id, 'applicant_name' => 'Imran Kabir', 'applicant_name_bn' => 'ইমরান কবির',
@@ -207,5 +208,63 @@ class DatabaseSeeder extends Seeder
             'name' => 'Annual Examination', 'name_bn' => 'বার্ষিক পরীক্ষা', 'starts_on' => '2026-11-22', 'ends_on' => '2026-12-03',
         ]);
         $setup->addClassSubjects($annual, $class6->id, null, 'written_mcq');
+    }
+
+    /**
+     * Fee heads and plans, an accountant login, invoices for September to
+     * November for Class 6, and a mix of payments: paid in full, partly paid,
+     * a sibling discount, an opt-in transport fee and one family overdue.
+     */
+    private function seedFees(\App\Modules\Academics\Models\AcademicSession $session, SchoolClass $class6): void
+    {
+        $accountant = \App\Models\User::create(['name' => 'Farhana Akter', 'email' => 'accounts@dhaka-model.test', 'password' => 'password']);
+        $accountant->forceFill(['status' => 'active', 'email_verified_at' => now()])->save();
+        $accountant->assignRole('Accountant');
+
+        $cat = fn (string $name, string $bn, int $order) => \App\Modules\Finance\Models\FeeCategory::create(['name' => $name, 'name_bn' => $bn, 'sort_order' => $order]);
+        $tuition = $cat('Tuition', 'বেতন', 1);
+        $exam = $cat('Exam fee', 'পরীক্ষা ফি', 2);
+        $transport = $cat('Transport', 'পরিবহন', 3);
+        $cat('Admission', 'ভর্তি ফি', 4);
+
+        $plan = fn (array $a) => \App\Modules\Finance\Models\FeeStructure::create($a + ['academic_session_id' => $session->id, 'applies_to' => 'class']);
+        $plan(['class_id' => $class6->id, 'fee_category_id' => $tuition->id, 'name' => 'Monthly tuition', 'amount' => '1200.00', 'frequency' => 'monthly', 'start_period' => '2026-01']);
+        $plan(['class_id' => null, 'fee_category_id' => $exam->id, 'name' => 'Exam fee', 'amount' => '500.00', 'frequency' => 'half_yearly', 'start_period' => '2026-06']);
+        $bus = $plan(['class_id' => null, 'fee_category_id' => $transport->id, 'name' => 'School bus', 'amount' => '800.00', 'frequency' => 'monthly', 'start_period' => '2026-01', 'applies_to' => 'assigned']);
+
+        $students = \App\Modules\People\Models\Student::query()->orderBy('id')->get()->keyBy('full_name');
+        \App\Modules\Finance\Models\StudentFeeAssignment::create(['student_id' => $students['Tanvir Hasan']->id, 'fee_structure_id' => $bus->id, 'note' => 'Uttara route']);
+        \App\Modules\Finance\Models\FeeDiscount::create([
+            'student_id' => $students['Nusrat Jahan']->id, 'academic_session_id' => $session->id, 'fee_category_id' => $tuition->id,
+            'name' => 'Sibling discount', 'kind' => 'percent', 'value' => '10.00', 'created_by' => $accountant->id,
+        ]);
+
+        app(\App\Modules\Finance\Services\FinanceSettings::class)->save([
+            'due_day' => 10, 'late_fee_enabled' => true, 'late_fee_kind' => 'fixed', 'late_fee_value' => '50.00', 'late_fee_grace_days' => 7,
+            'receipt_note' => 'Fees once paid are not refundable except as decided by the school authority.',
+        ]);
+
+        $billing = app(\App\Modules\Finance\Services\BillingService::class);
+
+        foreach (['2026-09', '2026-10', '2026-11'] as $period) {
+            $billing->generate($period, $class6->id, \Carbon\CarbonImmutable::parse($period.'-10'), $accountant);
+        }
+
+        $payments = app(\App\Modules\Finance\Services\PaymentService::class);
+        $pay = fn (string $name, string $amount, string $method, string $on, ?string $ref = null) => $payments->record(
+            $students[$name],
+            ['amount' => $amount, 'method' => $method, 'reference' => $ref, 'received_at' => \Carbon\CarbonImmutable::parse($on.' 11:30', 'Asia/Dhaka'), 'idempotency_key' => 'seed-'.md5($name.$amount.$on)],
+            null,
+            $accountant,
+        );
+
+        $pay('Ayesha Rahman', '1200.00', 'cash', '2026-09-05');
+        $pay('Ayesha Rahman', '1200.00', 'mobile_banking', '2026-10-04', 'BKS8XK2M1P');
+        $pay('Tanvir Hasan', '2000.00', 'cash', '2026-09-09');
+        $pay('Tanvir Hasan', '1500.00', 'bank', '2026-10-12', 'DBBL-REF-77120');
+        $pay('Nusrat Jahan', '2160.00', 'cash', '2026-10-08');
+
+        // Rafiul has paid nothing: September and October are overdue and get the late fee.
+        $billing->applyLateFees(\Carbon\CarbonImmutable::now('Asia/Dhaka')->startOfDay());
     }
 }

@@ -74,11 +74,19 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ English labels for all status keys (`lang/en.json` was empty, so English screens showed raw keys such as `class_teacher`); filter dropdowns on several M3 pages no longer stretch full width
 - ✅ 212 automated tests (34 new for this milestone: 22 engine fixtures, 12 workflow)
 
-## Milestone 5 — Finance ⬜
-Fee categories/structures/assignments, invoices + items, discounts, late fees,
-manual payments, allocations in transactions, immutable payments + reversal rows,
-receipts, reports, gateway adapter interface (bKash/Nagad/Rocket/SSLCommerz added
-only with real sandbox credentials), idempotent callbacks, reconciliation job.
+## Milestone 5 — Finance ✅
+- ✅ Fee heads (bilingual) and per-session fee plans: class-wide or opt-in (e.g. transport), monthly / quarterly / half-yearly / yearly / one-time from a chosen first month
+- ✅ Per-student overrides (0 waives a class fee) and discounts/scholarships (percent or fixed, one fee head or all)
+- ✅ Invoice generation per month (all classes or one), idempotent: a database key allows one live invoice per student per month, so re-runs and double clicks skip existing ones; one-off invoices for single charges
+- ✅ Append-only invoice lines: discounts recorded on the line; waivers and extra charges are new lines; late fees (fixed or % of balance, after a grace period, once per invoice) added by a nightly scheduled job; cancellation only without live payments, kept on record
+- ✅ Payments: cash, bank, cheque, mobile banking (reference required); allocated oldest-due-first or to chosen invoices inside one transaction with the student's invoices locked; no over-collection; double submission returns the first payment (browser-generated key + unique index)
+- ✅ Immutable records: successful payments, allocations, invoice lines and reversals refuse updates/deletes; invoices are never deleted. Reversal (mistake, bounced cheque) or refund (money returned) is a separate row, needs `fees.refund`, and restores the invoice balance
+- ✅ Invoice totals/paid amounts are caches recomputed from lines and live allocations in every transaction (`InvoiceLedger`); tests assert they match
+- ✅ Bilingual printable A5 receipts and invoices (browser print; PAID / CANCELLED / REVERSED watermarks)
+- ✅ Online payment architecture without any made-up provider: `PaymentGateway` interface, empty registry, encrypted per-school credentials, signature-verified CSRF-exempt callback endpoint, idempotent settlement (unique gateway transaction id, repeated callbacks harmless, amount mismatch held for review), return page that never marks anything paid, reconciliation job (every 15 minutes) that queries the provider and expires stale attempts. Exercised end-to-end in tests with a test-only adapter
+- ✅ Fees dashboard (today/month collected, outstanding, overdue, student search), invoice and payment lists with filters, student fee account, reports (collections by day/method/collector net of reversals; dues by class with aging) and XLSX exports (formula-injection safe)
+- ✅ New role grants: Accountant manages and collects but cannot refund; Principal views, refunds and sees reports
+- ✅ 244 automated tests (32 new for this milestone)
 
 ## Milestone 6 — Portals and public websites ⬜
 Teacher, parent (child switcher, linked children only), student portals; website
@@ -95,8 +103,14 @@ provider abstraction with Bangla/English templates and delivery logs.
 Isolation review, authorization review, load test, query tuning, backup/restore
 drill, pilot onboarding, production deployment guide.
 
-## Known limitations after Milestone 4
-- Grading fixtures are illustrative, not yet approved by a pilot school (see open question 2).
+## Known limitations after Milestone 5
+- No online gateway adapter is installed: bKash, Nagad, Rocket and SSLCommerz need merchant credentials and current official documentation (open question 4). Mobile-banking payments are recorded manually with their transaction ID.
+- No advance/credit balance: a payment cannot exceed what is owed. An online payment that arrives after the invoice was settled in cash stays partly unallocated and is flagged for a manual refund.
+- Reversal/refund is for a whole payment; partial refunds are not supported. Refunding an online payment through the gateway is manual.
+- Discounts and plan changes apply to invoices generated afterwards; issued invoices are corrected with waiver/charge lines.
+- No expense ledger or accounting exports (chart of accounts, journal) yet.
+- Fee reminders by SMS/email arrive with the notification channels in Milestone 7; parents see invoices and pay online in the portal (Milestone 6).
+- Exams: grading fixtures are illustrative, not yet approved by a pilot school (see open question 2).
 - Report cards are printed from the browser; there is no server-generated PDF file or bulk ZIP download yet.
 - One optional (4th) subject counts per student; a student with several optional papers has the best one counted and the rest reported as non-GPA. There is no per-student subject choice record yet; "not taking" is entered per mark sheet (exempt).
 - No combined/annual result across several exams (e.g. 30% half-yearly + 70% annual) yet.
@@ -115,6 +129,15 @@ drill, pilot onboarding, production deployment guide.
 - No plans/subscriptions yet: school status is changed manually by platform admins.
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.
+
+## Test coverage (Milestone 5 additions)
+| Area | File |
+|---|---|
+| Paisa arithmetic, percent rounding, billing months per frequency | `tests/Unit/Finance/MoneyTest.php` |
+| Generation with class/opt-in fees, overrides, discounts; re-runs; one class; session bounds; cancel and regenerate; waivers/charges; one-off invoice; late fees (grace, once, percent, off); permissions | `tests/Feature/Finance/BillingTest.php` |
+| Oldest-first and chosen allocation, over-collection, validation, double submission, reversal/refund, cache = ledger, cancellation guard, immutability, roles, cross-school isolation | `tests/Feature/Finance/PaymentTest.php` |
+| No gateway by default, verified callback settles once, bad signature / wrong amount / failure, one transaction cannot pay twice, browser return never pays, reconciliation and expiry, cash-meanwhile excess, encrypted credentials | `tests/Feature/Finance/GatewayTest.php` |
+| Dashboard numbers, lists, student account, invoice/receipt/print, reports and XLSX export, access per role | `tests/Feature/Finance/FinanceScreensTest.php` |
 
 ## Test coverage (Milestone 4 additions)
 | Area | File |

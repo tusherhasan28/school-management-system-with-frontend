@@ -29,6 +29,8 @@ app/
     Teaching/             Teacher assignments, TeachingScope/TeachingAccess, timetable, calendar
     Attendance/           Attendance sessions, marks, corrections, absence notification job
     Homework/             Homework, attachments, submissions and grading
+    Finance/              Fee setup, invoices, payments, receipts, reports, gateway layer
+      Gateways/           PaymentGateway interface, registry, payload sanitizer
     Exams/                Exam setup, grading scales, marks entry, results, report cards
       Grading/            Pure grading engine (no DB): Hundredths, GradingConfig, GradingRules, GradingEngine
   Support/Authorization/  TenantPolicy base (permission + same-school check)
@@ -134,6 +136,23 @@ administration under `/app` is the deliberate namespace that keeps both.
   on a private disk. Downloads go through controllers that authorize and stream, or
   short-lived signed URLs bound to the tenant host.
 
+### Payments and money
+- Every change to what is owed or paid happens in one transaction with the affected
+  invoice rows locked; `InvoiceLedger` recomputes the cached totals from invoice lines
+  and live allocations (successful, unreversed payments) every time.
+- Manual payments carry a browser-generated idempotency key (unique per school), so a
+  resubmitted form returns the first payment.
+- Online payments (no adapter installed yet): an adapter implements
+  `App\Modules\Finance\Gateways\PaymentGateway` following the provider's current
+  official documentation and is listed in `config/finance.php` only after sandbox
+  tests pass. Its `parseCallback()` must verify the provider signature. Settlement
+  happens only in `OnlinePaymentService::apply()`, from a verified callback or a
+  server-to-server `query()`; it is idempotent (row lock, final states never change,
+  unique gateway transaction id) and refuses amounts that differ. The browser return
+  URL only displays status and queues reconciliation. `finance:run reconcile` runs
+  every 15 minutes; `finance:run late-fees` daily at 01:30 Dhaka time (cron must run
+  `php artisan schedule:run` every minute).
+
 ## 4. Authentication and authorization
 
 - **Tenant users** (`users` table, `web` guard) — authenticated through Laravel
@@ -203,6 +222,8 @@ every environment. Guest redirects choose the login page by host, not path.
 | Platform admin language | English | `TENANCY_PLATFORM_LOCALE` |
 | Platform roles | Fixed enum (`PlatformRole`), not Spatie | `app/Enums/PlatformRole.php` |
 | Report card output | Browser print / "Save as PDF" (correct Bangla shaping, no server PDF dependency) | `pages/app/exams/report-cards.tsx` |
+| Advance payments / credit | Not supported (payment ≤ amount owed) | `PaymentService::plan()` |
+| Late fees | Off until a school enables them | Fees → Setup |
 | Grading defaults | GPA 5 preset with half-up GPA rounding, 4th-subject bonus above 2.00 — editable per scale | `GradingPresets`, scale editor |
 | Brand accent | Deep teal `oklch(0.46 0.085 185)` | `resources/css/app.css` |
 

@@ -19,6 +19,13 @@ use App\Modules\Exams\Http\Controllers\ExamController;
 use App\Modules\Exams\Http\Controllers\ExamSetupController;
 use App\Modules\Exams\Http\Controllers\MarkSheetController;
 use App\Modules\Exams\Http\Controllers\ResultController;
+use App\Modules\Finance\Http\Controllers\FeeSetupController;
+use App\Modules\Finance\Http\Controllers\FinanceDashboardController;
+use App\Modules\Finance\Http\Controllers\FinanceReportController;
+use App\Modules\Finance\Http\Controllers\GatewayController;
+use App\Modules\Finance\Http\Controllers\InvoiceController;
+use App\Modules\Finance\Http\Controllers\PaymentController;
+use App\Modules\Finance\Http\Controllers\StudentFeeController;
 use App\Modules\Setup\Http\Controllers\SetupController;
 use App\Modules\Teaching\Http\Controllers\AssignmentController;
 use App\Modules\Teaching\Http\Controllers\CalendarController;
@@ -39,6 +46,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', PublicHomeController::class)->name('home');
 Route::get('admission', [PublicAdmissionController::class, 'create'])->name('public.admission');
 Route::post('admission', [PublicAdmissionController::class, 'store'])->middleware('throttle:public-forms')->name('public.admission.store');
+
+// Online payments: provider notifications (signature-verified, CSRF-exempt) and the payer's return page.
+Route::post('payments/callback/{gateway}', [GatewayController::class, 'callback'])->middleware('throttle:120,1')->name('payments.callback');
+Route::get('payments/return/{gateway}', [GatewayController::class, 'return'])->middleware('throttle:60,1')->name('payments.return');
 
 // Fortify (login, password reset, 2FA, email verification) for tenant users only.
 require base_path('vendor/laravel/fortify/routes/routes.php');
@@ -174,6 +185,40 @@ Route::middleware(['auth:web', 'active', 'verified'])->prefix('app')->group(func
     Route::post('marks/{sheet}', [MarkSheetController::class, 'save'])->name('marks.save');
     Route::post('marks/{sheet}/verify', [MarkSheetController::class, 'verify'])->name('marks.verify');
     Route::post('marks/{sheet}/return', [MarkSheetController::class, 'returnSheet'])->name('marks.return');
+
+    // Milestone 5: fees and payments
+    Route::prefix('fees')->name('fees.')->group(function () {
+        Route::get('/', FinanceDashboardController::class)->name('dashboard');
+        Route::get('setup', [FeeSetupController::class, 'index'])->name('setup');
+        Route::post('categories', [FeeSetupController::class, 'storeCategory'])->name('categories.store');
+        Route::put('categories/{category}', [FeeSetupController::class, 'updateCategory'])->name('categories.update');
+        Route::post('structures', [FeeSetupController::class, 'storeStructure'])->name('structures.store');
+        Route::put('structures/{structure}', [FeeSetupController::class, 'updateStructure'])->name('structures.update');
+        Route::put('settings', [FeeSetupController::class, 'updateSettings'])->name('settings');
+        Route::put('gateways/{gateway}', [FeeSetupController::class, 'saveGateway'])->name('gateways.save');
+
+        Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::post('invoices/generate', [InvoiceController::class, 'generate'])->middleware('throttle:10,1')->name('invoices.generate');
+        Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
+        Route::post('invoices/{invoice}/lines', [InvoiceController::class, 'addLine'])->name('invoices.lines');
+        Route::post('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
+
+        Route::get('students/{student}', [StudentFeeController::class, 'show'])->name('students.show');
+        Route::post('students/{student}/invoices', [InvoiceController::class, 'store'])->name('students.invoices.store');
+        Route::post('students/{student}/payments', [PaymentController::class, 'store'])->middleware('throttle:30,1')->name('students.payments.store');
+        Route::post('students/{student}/assignments', [StudentFeeController::class, 'storeAssignment'])->name('students.assignments.store');
+        Route::post('students/{student}/discounts', [StudentFeeController::class, 'storeDiscount'])->name('students.discounts.store');
+        Route::post('assignments/{assignment}/toggle', [StudentFeeController::class, 'toggleAssignment'])->name('assignments.toggle');
+        Route::post('discounts/{discount}/toggle', [StudentFeeController::class, 'toggleDiscount'])->name('discounts.toggle');
+
+        Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+        Route::post('payments/{payment}/reverse', [PaymentController::class, 'reverse'])->name('payments.reverse');
+
+        Route::get('reports', [FinanceReportController::class, 'index'])->name('reports');
+        Route::get('reports/{report}/export', [FinanceReportController::class, 'export'])->name('reports.export');
+    });
 });
 
 require __DIR__.'/settings.php';

@@ -32,8 +32,8 @@ final class TenantPermissions
             // marks.enter_all covers every mark sheet.
             'exams.manage', 'marks.enter', 'marks.enter_all', 'marks.verify',
             'results.view', 'results.approve', 'results.publish',
+            'fees.view', 'fees.manage', 'fees.collect', 'fees.refund', 'fees.reports',
             // Declared now so roles are stable; enforced as modules land.
-            'fees.collect', 'fees.refund',
             'notices.manage', 'website.manage',
         ];
     }
@@ -52,12 +52,14 @@ final class TenantPermissions
                 'admissions.manage', 'assignments.manage', 'timetable.view', 'timetable.manage', 'calendar.manage',
                 'attendance.mark', 'attendance.correct', 'attendance.view_all', 'homework.view_all',
                 'exams.manage', 'marks.verify', 'results.view', 'results.approve', 'results.publish', 'notices.manage',
+                'fees.view', 'fees.refund', 'fees.reports',
             ],
             'Exam Controller' => [
                 'dashboard.view', 'academics.view', 'students.view', 'timetable.view',
                 'exams.manage', 'marks.enter', 'marks.enter_all', 'marks.verify', 'results.view',
             ],
-            'Accountant' => ['dashboard.view', 'students.view', 'guardians.view', 'fees.collect', 'fees.refund'],
+            // Refunds and reversals need fees.refund (Principal, Admin, Owner), not the cashier.
+            'Accountant' => ['dashboard.view', 'students.view', 'guardians.view', 'fees.view', 'fees.manage', 'fees.collect', 'fees.reports'],
             'Admission Officer' => [
                 'dashboard.view', 'academics.view', 'students.view', 'students.create', 'students.update',
                 'guardians.view', 'guardians.manage', 'admissions.manage', 'imports.manage',

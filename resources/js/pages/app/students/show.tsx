@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
-import { useT } from '@/lib/i18n';
+import { formatMoney, useT } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { reportCards } from '@/routes/exams';
+import { show as feeAccount } from '@/routes/fees/students';
 import { show as guardianShow } from '@/routes/guardians';
 import { edit, index } from '@/routes/students';
 import { relationships } from './form';
@@ -36,11 +37,12 @@ type Props = {
         enrollments: { id: number; session: string; class: string; section: string | null; roll_no: string | null; status: string; enrolled_at: string; ended_at: string | null; end_reason: string | null }[];
     };
     attendance: Record<string, number>;
+    fees: { due: string; overdue: string; open: number } | null;
     results: { exam_id: number; exam: string; published: boolean; gpa: string | null; letter_grade: string | null; status: string; percentage: string; position: number | null; class_id: number; section_id: number | null; can_print: boolean }[];
     can: { update: boolean; changeStatus: boolean; manageGuardians: boolean };
 };
 
-export default function StudentShow({ student, attendance, results, can }: Props) {
+export default function StudentShow({ student, attendance, results, fees, can }: Props) {
     const t = useT();
     const [linking, setLinking] = useState(false);
     const [ending, setEnding] = useState(false);
@@ -131,6 +133,19 @@ export default function StudentShow({ student, attendance, results, can }: Props
                         ))}
                     </div>
                 </section>
+
+                {fees && (
+                    <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card p-5">
+                        <div>
+                            <h2 className="font-medium">{t('Fees')}</h2>
+                            <p className="text-sm text-muted-foreground">
+                                {Number(fees.due) > 0 ? t('Due :due on :count invoices', { due: formatMoney(fees.due), count: fees.open }) : t('Nothing is due.')}
+                                {Number(fees.overdue) > 0 && <span className="ml-2 font-medium text-destructive">{t('Overdue :amount', { amount: formatMoney(fees.overdue) })}</span>}
+                            </p>
+                        </div>
+                        <Button variant="outline" asChild><Link href={feeAccount(student.id)}>{t('Fee account')}</Link></Button>
+                    </section>
+                )}
 
                 {results.length > 0 && (
                     <section className="rounded-xl border border-border/70 bg-card">

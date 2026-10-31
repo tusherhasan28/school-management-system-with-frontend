@@ -41,6 +41,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Gateways post server-to-server notifications without a CSRF token; the
+        // adapter verifies the provider's signature instead.
+        $middleware->validateCsrfTokens(except: ['payments/callback/*']);
+
         // Resolve the school before the session starts and before auth runs.
         $middleware->prependToPriorityList(before: StartSession::class, prepend: ResolveTenant::class);
         // Bind the session to the school before auth, Inertia shared props or bindings run.
