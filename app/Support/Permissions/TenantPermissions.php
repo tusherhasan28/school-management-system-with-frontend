@@ -28,8 +28,12 @@ final class TenantPermissions
             // assignments unless the user also has the *.view_all permission.
             'attendance.mark', 'attendance.correct', 'attendance.view_all',
             'homework.manage', 'homework.view_all',
+            // marks.enter is limited to the teacher's own subjects/sections;
+            // marks.enter_all covers every mark sheet.
+            'exams.manage', 'marks.enter', 'marks.enter_all', 'marks.verify',
+            'results.view', 'results.approve', 'results.publish',
             // Declared now so roles are stable; enforced as modules land.
-            'marks.enter', 'results.publish', 'fees.collect', 'fees.refund',
+            'fees.collect', 'fees.refund',
             'notices.manage', 'website.manage',
         ];
     }
@@ -47,7 +51,11 @@ final class TenantPermissions
                 'students.view', 'students.export', 'students.promote', 'guardians.view', 'staff.view',
                 'admissions.manage', 'assignments.manage', 'timetable.view', 'timetable.manage', 'calendar.manage',
                 'attendance.mark', 'attendance.correct', 'attendance.view_all', 'homework.view_all',
-                'results.publish', 'notices.manage',
+                'exams.manage', 'marks.verify', 'results.view', 'results.approve', 'results.publish', 'notices.manage',
+            ],
+            'Exam Controller' => [
+                'dashboard.view', 'academics.view', 'students.view', 'timetable.view',
+                'exams.manage', 'marks.enter', 'marks.enter_all', 'marks.verify', 'results.view',
             ],
             'Accountant' => ['dashboard.view', 'students.view', 'guardians.view', 'fees.collect', 'fees.refund'],
             'Admission Officer' => [
@@ -72,6 +80,6 @@ final class TenantPermissions
      */
     public static function staffRoles(): array
     {
-        return ['School Admin', 'Principal', 'Accountant', 'Admission Officer', 'Teacher', 'Class Teacher', 'Librarian', 'Transport Manager', 'Receptionist'];
+        return ['School Admin', 'Principal', 'Exam Controller', 'Accountant', 'Admission Officer', 'Teacher', 'Class Teacher', 'Librarian', 'Transport Manager', 'Receptionist'];
     }
 }

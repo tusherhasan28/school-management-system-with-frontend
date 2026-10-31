@@ -210,6 +210,69 @@ One row per enrolled student when homework is set: `homework_id`, `student_id`
 `submission_text`, `attachment_path` (reserved for the student portal), `marks`
 (≤ `max_marks`), `feedback`, `graded_by`, `graded_at`.
 
+## Examinations (Milestone 4)
+
+### `exam_types`
+`name` (unique per school), `name_bn`, `sort_order`.
+
+### `grading_scales`
+`name` (unique per school), `description`, `rules` JSON (see
+`App\Modules\Exams\Grading\GradingRules::DEFAULTS` for keys and defaults),
+`is_default`, `locked_at` (set when a published result used the scale; locked scales
+cannot change, only be duplicated).
+
+### `grading_scale_items`
+`grading_scale_id`, `grade` (unique per scale), `min_percentage`, `max_percentage`
+DECIMAL(5,2), `grade_point` DECIMAL(4,2), `is_fail`, `remarks`, `remarks_bn`. Bands must
+cover 0–100 without gaps or overlaps and include a fail band.
+
+### `examinations`
+`academic_session_id`, `exam_type_id`, `grading_scale_id`, `name`, `name_bn`,
+`starts_on`, `ends_on`, `status` (draft/marks_entry/calculated/approved/published),
+`current_calculation_id` (FK to `result_calculations`), `approved_by/at`,
+`published_by/at`.
+
+### `exam_subjects`
+`examination_id`, `class_id`, `subject_id` (unique together), `subject_type`
+(compulsory/optional/non_gpa), `exam_date`, `starts_at`, `duration_minutes`,
+`full_marks` (sum of components, maintained by the service), `pass_marks`, `sort_order`.
+
+### `exam_subject_components`
+`exam_subject_id`, `name`, `name_bn` (Written, MCQ, Practical, …), `full_marks`,
+optional `pass_marks` for that part, `sort_order`.
+
+### `exam_mark_sheets`
+One per exam subject and section (`UNIQUE school_id, exam_subject_id, section_id`):
+`class_id` + `section_id` (FK to `sections(school_id, class_id, id)`), `status`
+(draft/submitted/verified), `submitted_by/at`, `verified_by/at`.
+
+### `exam_marks`
+`exam_subject_id`, `exam_mark_sheet_id`, `student_id` (unique per exam subject),
+`status` (present/absent/exempt), `total` (null until every part is entered),
+`remarks`, `entered_by`. Changes are audited (`exam.marks_saved`).
+
+### `exam_mark_parts`
+`exam_mark_id`, `exam_subject_component_id` (unique pair), `marks` DECIMAL(7,2),
+checked against the component's full marks.
+
+### `result_calculations`
+Immutable (model refuses update/delete). `examination_id`, `version` (unique per
+exam), `engine_version`, `grading_snapshot` JSON (bands + rules used),
+`setup_snapshot` JSON (subjects + components used), `config_hash`, `input_hash`
+(sha256 of every mark used), `student_count`, `calculated_by`, `calculated_at`.
+
+### `exam_results`
+Per student per calculation (`UNIQUE school_id, result_calculation_id, student_id`):
+`examination_id`, `class_id`, `section_id`, `full_marks`, `obtained_marks`,
+`percentage`, `gpa`, `gpa_without_optional`, `letter_grade`, `result_status`
+(pass/fail/incomplete), `failed_subjects`, `class_position`, `section_position`.
+
+### `exam_subject_results`
+`exam_result_id`, `exam_subject_id`, `subject_id`, `status` (present/absent),
+`counted_as` (compulsory/optional/non_gpa), `full_marks`, `obtained_marks`,
+`percentage`, `grade`, `grade_point`, `passed`, `components` JSON (part marks and
+pass/fail as used).
+
 ## Framework tables
 `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`
 (Laravel defaults; production uses Redis for sessions, cache and queues).

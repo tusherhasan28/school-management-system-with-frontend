@@ -17,6 +17,7 @@ void createInertiaApp({
             case name.startsWith('marketing/'):
                 return MarketingLayout;
             case name === 'platform/auth/login':
+            case name === 'app/exams/report-cards':
             case name.startsWith('tenant/public/'):
                 return null;
             case name.startsWith('platform/'):

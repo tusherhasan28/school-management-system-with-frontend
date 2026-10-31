@@ -12,6 +12,7 @@ import { formatDate, formatDateTime, useT } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { attachment, index } from '@/routes/homework';
 import { homeworkTone } from './index';
+import { cn } from '@/lib/utils';
 
 type Submission = { student_id: number; full_name: string; admission_no: string; status: string; marks: string | null; feedback: string | null };
 
@@ -71,7 +72,7 @@ export default function HomeworkShow({ homework: h, submissions, can }: Props) {
                                             <td className="px-4 py-2"><p className="font-medium">{s.full_name}</p><p className="font-mono text-xs text-muted-foreground">{s.admission_no}</p></td>
                                             <td className="px-4 py-2">
                                                 {can.manage ? (
-                                                    <select className={selectClass + ' w-36'} value={row.status} onChange={(e) => set(s.student_id, { status: e.target.value })} aria-label={t('Status')}>
+                                                    <select className={cn(selectClass, 'w-36')} value={row.status} onChange={(e) => set(s.student_id, { status: e.target.value })} aria-label={t('Status')}>
                                                         {statuses.map((st) => <option key={st} value={st}>{t(st)}</option>)}
                                                     </select>
                                                 ) : t(row.status)}

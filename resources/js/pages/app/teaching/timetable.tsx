@@ -14,6 +14,7 @@ import { useT, weekdayName } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { index } from '@/routes/timetable';
 import type { AcademicClass, SessionOption } from '@/types';
+import { cn } from '@/lib/utils';
 
 type Props = {
     filters: { session: number | null; section: number | null };
@@ -44,10 +45,10 @@ export default function Timetable({ filters, section, periods, sessions, classes
                     description={t('Clashes are blocked: a section, a teacher and a room can only be in one place at a time.')}
                     actions={
                         <>
-                            <select className={selectClass + ' w-auto'} value={filters.session ?? ''} onChange={(e) => go({ session: e.target.value })} aria-label={t('Session')}>
+                            <select className={cn(selectClass, 'w-auto')} value={filters.session ?? ''} onChange={(e) => go({ session: e.target.value })} aria-label={t('Session')}>
                                 {sessions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
-                            <select className={selectClass + ' w-auto'} value={filters.section ?? ''} onChange={(e) => go({ section: e.target.value })} aria-label={t('Section')}>
+                            <select className={cn(selectClass, 'w-auto')} value={filters.section ?? ''} onChange={(e) => go({ section: e.target.value })} aria-label={t('Section')}>
                                 <option value="">{t('Choose a section…')}</option>
                                 {classes.map((c) => (
                                     <optgroup key={c.id} label={c.name}>

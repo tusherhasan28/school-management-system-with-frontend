@@ -92,6 +92,7 @@ class DatabaseSeeder extends Seeder
         $salma->user->forceFill(['password' => 'password', 'status' => 'active', 'email_verified_at' => now()])->save();
 
         $this->seedOperations($session, $class6, $sectionA, $salma);
+        $this->seedExams($session, $class6);
 
         app(AdmissionService::class)->submit([
             'applied_class_id' => $class6->id, 'applicant_name' => 'Imran Kabir', 'applicant_name_bn' => 'ইমরান কবির',
@@ -104,8 +105,10 @@ class DatabaseSeeder extends Seeder
     {
         $subjects = \App\Modules\Academics\Models\Subject::query()->pluck('id', 'code');
 
+        $order = array_flip(['BAN', 'ENG', 'MATH', 'SCI', 'BGS', 'REL', 'ICT']);
+
         foreach ($subjects as $code => $id) {
-            \App\Modules\Academics\Models\ClassSubject::create(['academic_session_id' => $session->id, 'class_id' => $class6->id, 'subject_id' => $id, 'full_marks' => 100, 'pass_marks' => 33]);
+            \App\Modules\Academics\Models\ClassSubject::create(['academic_session_id' => $session->id, 'class_id' => $class6->id, 'subject_id' => $id, 'full_marks' => 100, 'pass_marks' => 33, 'sort_order' => ($order[$code] ?? 9) + 1]);
         }
 
         $assignments = app(\App\Modules\Teaching\Services\AssignmentService::class);
@@ -135,5 +138,74 @@ class DatabaseSeeder extends Seeder
             'staff_member_id' => $salma->id, 'title' => 'Fractions — exercise 3.2', 'instructions' => 'Solve questions 1 to 10 in your notebook.',
             'assigned_on' => now('Asia/Dhaka')->toDateString(), 'due_at' => now('Asia/Dhaka')->addDays(3)->setTime(9, 0), 'max_marks' => 10, 'status' => 'published',
         ]);
+    }
+
+    /**
+     * Exam types, a grading scale from the GPA 5 preset, a published Half-Yearly
+     * exam for Class 6 (marks entered, verified, calculated, approved, published)
+     * and a draft Annual exam.
+     */
+    private function seedExams(\App\Modules\Academics\Models\AcademicSession $session, SchoolClass $class6): void
+    {
+        $principal = \App\Models\User::query()->where('email', 'principal@dhaka-model.test')->firstOrFail();
+
+        foreach ([['Class test', 'শ্রেণি পরীক্ষা'], ['Half-Yearly', 'অর্ধবার্ষিক'], ['Annual', 'বার্ষিক']] as $i => [$name, $bn]) {
+            \App\Modules\Exams\Models\ExamType::create(['name' => $name, 'name_bn' => $bn, 'sort_order' => $i]);
+        }
+
+        $scale = app(\App\Modules\Exams\Services\GradingScaleService::class)->fromPreset('gpa5');
+        $setup = app(\App\Modules\Exams\Services\ExamSetupService::class);
+        $marks = app(\App\Modules\Exams\Services\MarkEntryService::class);
+        $results = app(\App\Modules\Exams\Services\ResultService::class);
+        $type = fn (string $name) => \App\Modules\Exams\Models\ExamType::query()->where('name', $name)->value('id');
+
+        $exam = $setup->create([
+            'academic_session_id' => $session->id, 'exam_type_id' => $type('Half-Yearly'), 'grading_scale_id' => $scale->id,
+            'name' => 'Half-Yearly Examination', 'name_bn' => 'অর্ধবার্ষিক পরীক্ষা', 'starts_on' => '2026-06-14', 'ends_on' => '2026-06-25',
+        ]);
+        $setup->addClassSubjects($exam, $class6->id, null, 'written_mcq');
+
+        foreach ($exam->subjects()->orderBy('sort_order')->get() as $i => $subject) {
+            $subject->update(['exam_date' => \Carbon\CarbonImmutable::parse('2026-06-14')->addDays($i + intdiv($i, 5))->toDateString(), 'starts_at' => '10:00', 'duration_minutes' => 180]);
+        }
+
+        $setup->openMarksEntry($exam);
+
+        // Written (out of 70) and MCQ (out of 30) per student, varied by subject.
+        $base = [[62, 27], [50, 22], [44, 19], [36, 15]];
+
+        foreach (\App\Modules\Exams\Models\ExamMarkSheet::query()->with('examSubject.components', 'examSubject.subject')->get() as $n => $sheet) {
+            [$written, $mcq] = $sheet->examSubject->components->pluck('id')->all();
+            $rows = [];
+
+            foreach ($marks->roster($exam, $sheet->class_id, $sheet->section_id) as $s => $enrollment) {
+                [$w, $m] = $base[$s % 4];
+                $w = min(70, max(0, $w + (($n * 7 + $s * 3) % 11) - 4));
+                $m = min(30, max(0, $m + (($n * 5 + $s) % 7) - 3));
+
+                if ($s === 3 && $sheet->examSubject->subject?->code === 'SCI') {
+                    [$w, $m] = [18, 6]; // one failed subject for the demo
+                }
+
+                $rows[$enrollment->student_id] = ['status' => 'present', 'parts' => [$written => (string) $w, $mcq => (string) $m]];
+            }
+
+            if ($rows !== []) {
+                $marks->save($sheet, $rows, $principal);
+            }
+
+            $marks->submit($sheet->refresh(), $principal);
+            $marks->verify($sheet->refresh(), $principal);
+        }
+
+        $results->calculate($exam, $principal);
+        $results->approve($exam->refresh()->load('currentCalculation'), $principal);
+        $results->publish($exam->refresh()->load('currentCalculation'), $principal, false);
+
+        $annual = $setup->create([
+            'academic_session_id' => $session->id, 'exam_type_id' => $type('Annual'), 'grading_scale_id' => $scale->id,
+            'name' => 'Annual Examination', 'name_bn' => 'বার্ষিক পরীক্ষা', 'starts_on' => '2026-11-22', 'ends_on' => '2026-12-03',
+        ]);
+        $setup->addClassSubjects($annual, $class6->id, null, 'written_mcq');
     }
 }

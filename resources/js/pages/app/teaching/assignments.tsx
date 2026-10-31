@@ -12,6 +12,7 @@ import { useT } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { index } from '@/routes/assignments';
 import type { AcademicClass, SessionOption } from '@/types';
+import { cn } from '@/lib/utils';
 
 type Row = { id: number; teacher: string; teacher_id: number; class: string; section: string | null; subject: string | null; assignment_type: string };
 
@@ -45,14 +46,14 @@ export default function Assignments({ assignments, filters, sessions, classes, s
                 <div className="grid gap-4 lg:grid-cols-3">
                     <div className="grid content-start gap-3 lg:col-span-2">
                         <div className="flex flex-wrap gap-2">
-                            <select className={selectClass + ' w-auto'} value={filters.session ?? ''} onChange={(e) => go({ session: e.target.value })} aria-label={t('Session')}>
+                            <select className={cn(selectClass, 'w-auto')} value={filters.session ?? ''} onChange={(e) => go({ session: e.target.value })} aria-label={t('Session')}>
                                 {sessions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
-                            <select className={selectClass + ' w-auto'} value={filters.teacher ?? ''} onChange={(e) => go({ teacher: e.target.value })} aria-label={t('Teacher')}>
+                            <select className={cn(selectClass, 'w-auto')} value={filters.teacher ?? ''} onChange={(e) => go({ teacher: e.target.value })} aria-label={t('Teacher')}>
                                 <option value="">{t('All teachers')}</option>
                                 {teachers.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
                             </select>
-                            <select className={selectClass + ' w-auto'} value={filters.class ?? ''} onChange={(e) => go({ class: e.target.value })} aria-label={t('Class')}>
+                            <select className={cn(selectClass, 'w-auto')} value={filters.class ?? ''} onChange={(e) => go({ class: e.target.value })} aria-label={t('Class')}>
                                 <option value="">{t('All classes')}</option>
                                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>

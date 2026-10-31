@@ -15,6 +15,10 @@ use App\Modules\People\Http\Controllers\PromotionController;
 use App\Modules\People\Http\Controllers\StaffController;
 use App\Modules\People\Http\Controllers\StudentController;
 use App\Modules\Setup\Http\Controllers\CampusController;
+use App\Modules\Exams\Http\Controllers\ExamController;
+use App\Modules\Exams\Http\Controllers\ExamSetupController;
+use App\Modules\Exams\Http\Controllers\MarkSheetController;
+use App\Modules\Exams\Http\Controllers\ResultController;
 use App\Modules\Setup\Http\Controllers\SetupController;
 use App\Modules\Teaching\Http\Controllers\AssignmentController;
 use App\Modules\Teaching\Http\Controllers\CalendarController;
@@ -136,6 +140,40 @@ Route::middleware(['auth:web', 'active', 'verified'])->prefix('app')->group(func
     Route::post('homework/{homework}', [HomeworkController::class, 'update'])->name('homework.update'); // POST: multipart with file
     Route::post('homework/{homework}/grade', [HomeworkController::class, 'grade'])->name('homework.grade');
     Route::get('homework/{homework}/attachment', [HomeworkController::class, 'attachment'])->name('homework.attachment');
+
+    // Milestone 4: examinations and results
+    Route::get('exam-setup', [ExamSetupController::class, 'index'])->name('exams.setup');
+    Route::post('exam-types', [ExamSetupController::class, 'storeType'])->name('exam-types.store');
+    Route::put('exam-types/{type}', [ExamSetupController::class, 'updateType'])->name('exam-types.update');
+    Route::delete('exam-types/{type}', [ExamSetupController::class, 'destroyType'])->name('exam-types.destroy');
+    Route::post('grading-scales', [ExamSetupController::class, 'storeScale'])->name('grading-scales.store');
+    Route::get('grading-scales/{scale}', [ExamSetupController::class, 'editScale'])->name('grading-scales.edit');
+    Route::put('grading-scales/{scale}', [ExamSetupController::class, 'updateScale'])->name('grading-scales.update');
+    Route::post('grading-scales/{scale}/duplicate', [ExamSetupController::class, 'duplicateScale'])->name('grading-scales.duplicate');
+    Route::post('grading-scales/{scale}/default', [ExamSetupController::class, 'defaultScale'])->name('grading-scales.default');
+    Route::delete('grading-scales/{scale}', [ExamSetupController::class, 'destroyScale'])->name('grading-scales.destroy');
+
+    Route::get('exams', [ExamController::class, 'index'])->name('exams.index');
+    Route::post('exams', [ExamController::class, 'store'])->name('exams.store');
+    Route::get('exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
+    Route::put('exams/{exam}', [ExamController::class, 'update'])->name('exams.update');
+    Route::post('exams/{exam}/subjects', [ExamController::class, 'addSubjects'])->name('exams.subjects.store');
+    Route::put('exam-subjects/{subject}', [ExamController::class, 'updateSubject'])->name('exams.subjects.update');
+    Route::delete('exam-subjects/{subject}', [ExamController::class, 'destroySubject'])->name('exams.subjects.destroy');
+    Route::post('exams/{exam}/open', [ExamController::class, 'open'])->name('exams.open');
+    Route::post('exams/{exam}/calculate', [ExamController::class, 'calculate'])->name('exams.calculate');
+    Route::post('exams/{exam}/approve', [ExamController::class, 'approve'])->name('exams.approve');
+    Route::post('exams/{exam}/publish', [ExamController::class, 'publish'])->name('exams.publish');
+    Route::post('exams/{exam}/reopen', [ExamController::class, 'reopen'])->name('exams.reopen');
+    Route::post('exams/{exam}/verify-all', [MarkSheetController::class, 'verifyAll'])->name('exams.verify-all');
+    Route::get('exams/{exam}/results', [ResultController::class, 'index'])->name('exams.results');
+    Route::get('exams/{exam}/report-cards', [ResultController::class, 'reportCards'])->name('exams.report-cards');
+
+    Route::get('marks', [MarkSheetController::class, 'index'])->name('marks.index');
+    Route::get('marks/{sheet}', [MarkSheetController::class, 'show'])->name('marks.show');
+    Route::post('marks/{sheet}', [MarkSheetController::class, 'save'])->name('marks.save');
+    Route::post('marks/{sheet}/verify', [MarkSheetController::class, 'verify'])->name('marks.verify');
+    Route::post('marks/{sheet}/return', [MarkSheetController::class, 'returnSheet'])->name('marks.return');
 });
 
 require __DIR__.'/settings.php';

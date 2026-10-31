@@ -9,7 +9,7 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 
 **Open questions for the product owner (not blocking):**
 1. Production domain name (replaces `schoolsaas.test` in `.env`).
-2. Approved grading examples (GPA tables, optional-subject rules) per institution type — needed for Milestone 4 fixtures.
+2. Approved grading examples (GPA tables, optional-subject rules) per institution type. Milestone 4 shipped with a configurable engine and hand-calculated illustrative fixtures (`tests/Unit/Exams/GradingEngineTest.php`); real marksheets from a pilot school should be added there as approved fixtures before go-live.
 3. Fee rules from pilot schools: late-fee formula, discount types, billing periods.
 4. SMS provider (e.g. SSL Wireless, BulkSMSBD) and payment gateway merchant accounts with sandbox credentials.
 5. Whether one class name may repeat across campuses (`schema-review.md` #16).
@@ -60,10 +60,19 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ Bangla translations for every new screen; dates follow the active language and school timezone
 - ✅ 178 automated tests (30 new for this milestone)
 
-## Milestone 4 — Examinations ⬜
-Exam types and schedules, configurable components, marks entry/verification,
-versioned grading scales, deterministic calculation with stored snapshot,
-approval/publication, bilingual report cards (PDF with Bangla shaping).
+## Milestone 4 — Examinations ✅
+- ✅ Exam types; exams per session with dates and a grading scale; class subjects added in bulk with a marks-distribution template (written, written + MCQ, written + MCQ + practical, written + continuous assessment), then adjusted per subject: parts, full marks, part pass marks, subject pass marks, compulsory / optional (4th) / non-GPA, schedule
+- ✅ Configurable grading scales: grade bands (validated to cover 0–100 without gaps, one fail band) and rules — GPA method (average / optional-subject bonus / none), bonus threshold, cap, decimals, rounding, subject-mark rounding, fail rules, absence rule, merit order, ranking of failed students. Presets are starting points only; nothing national is hardcoded
+- ✅ Deterministic grading engine in integer hundredths (`App\Modules\Exams\Grading`), engine version stored with each result
+- ✅ Workflow: draft → marks entry (setup frozen, one mark sheet per subject × section) → submit → verify (or return with reason) → calculate → approve → publish → reopen with reason
+- ✅ Teachers enter marks only for their assigned subject/section (class teachers for their whole section); `marks.enter_all` for exam controllers; every change to saved marks is audited with old and new totals
+- ✅ Versioned results: each calculation is an immutable `result_calculations` row with the grading and setup snapshot, a config hash and a hash of every mark; earlier versions stay on record; approval/publication blocked if the scale changed after calculation; publishing locks the scale
+- ✅ Results tabulation per class/section with positions, grade distribution and pass rate; class teachers see their own section
+- ✅ Bilingual (English + Bangla on every label) printable A4 report cards, single or whole class/section, with attendance, merit position, grading key and signature lines; drafts carry a watermark. Printed through the browser, which shapes Bangla correctly ("Save as PDF" gives a PDF)
+- ✅ Optional email of a result summary to each primary guardian on publication (queued, tenant-aware)
+- ✅ Exam results on the student profile (drafts only for `results.view`); new role **Exam Controller**
+- ✅ English labels for all status keys (`lang/en.json` was empty, so English screens showed raw keys such as `class_teacher`); filter dropdowns on several M3 pages no longer stretch full width
+- ✅ 212 automated tests (34 new for this milestone: 22 engine fixtures, 12 workflow)
 
 ## Milestone 5 — Finance ⬜
 Fee categories/structures/assignments, invoices + items, discounts, late fees,
@@ -86,7 +95,12 @@ provider abstraction with Bangla/English templates and delivery logs.
 Isolation review, authorization review, load test, query tuning, backup/restore
 drill, pilot onboarding, production deployment guide.
 
-## Known limitations after Milestone 3
+## Known limitations after Milestone 4
+- Grading fixtures are illustrative, not yet approved by a pilot school (see open question 2).
+- Report cards are printed from the browser; there is no server-generated PDF file or bulk ZIP download yet.
+- One optional (4th) subject counts per student; a student with several optional papers has the best one counted and the rest reported as non-GPA. There is no per-student subject choice record yet; "not taking" is entered per mark sheet (exempt).
+- No combined/annual result across several exams (e.g. 30% half-yearly + 70% annual) yet.
+- Students and guardians cannot view results online until the portals in Milestone 6; publication emails a summary only.
 - Students cannot submit homework themselves yet; teachers record submission status. Student/parent portals arrive in Milestone 6.
 - Absence alerts are email only. SMS needs the provider abstraction in Milestone 7.
 - Attendance is per day or per routine period; there is no hourly/biometric import.
@@ -101,6 +115,12 @@ drill, pilot onboarding, production deployment guide.
 - No plans/subscriptions yet: school status is changed manually by platform admins.
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.
+
+## Test coverage (Milestone 4 additions)
+| Area | File |
+|---|---|
+| Engine fixtures: optional-subject bonus, cap, rounding modes, component pass marks, optional fail rule, absence, exempt, best optional, percentage boundaries, subject-mark rounding, merit ties, percentage-only scale, average method, fail rule off, order independence, snapshot reproduction, band validation | `tests/Unit/Exams/GradingEngineTest.php` |
+| Full workflow with expected GPA/grade/positions, frozen setup, mark validation + audit, teacher scope, versioned recalculation + immutability, stale scale, scale lock/duplicate, approval/publication permissions, class-teacher result scope, profile visibility, guardian email, cross-school isolation | `tests/Feature/Exams/ExamWorkflowTest.php` |
 
 ## Test coverage (Milestone 3 additions)
 | Area | File |

@@ -13,6 +13,7 @@ import { formatDateTime, useT } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { create, index, show } from '@/routes/homework';
 import type { AcademicClass, Paginated } from '@/types';
+import { cn } from '@/lib/utils';
 
 type Row = { id: number; title: string; status: string; class: string; section: string | null; subject: string; teacher: string | null; assigned_on: string; due_at: string | null; submissions: number; done: number };
 
@@ -37,11 +38,11 @@ export default function HomeworkIndex({ homework, filters: initial, classes, can
             <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader title={t('Homework')} description={t('Homework for your classes and subjects this session.')} actions={can.create && <Button asChild><Link href={create()}><Plus />{t('Set homework')}</Link></Button>} />
                 <div className="flex flex-wrap gap-2">
-                    <select className={selectClass + ' w-auto'} value={filters.class} onChange={(e) => set('class', e.target.value)} aria-label={t('Class')}>
+                    <select className={cn(selectClass, 'w-auto')} value={filters.class} onChange={(e) => set('class', e.target.value)} aria-label={t('Class')}>
                         <option value="">{t('All classes')}</option>
                         {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
-                    <select className={selectClass + ' w-auto'} value={filters.status} onChange={(e) => set('status', e.target.value)} aria-label={t('Status')}>
+                    <select className={cn(selectClass, 'w-auto')} value={filters.status} onChange={(e) => set('status', e.target.value)} aria-label={t('Status')}>
                         <option value="">{t('All statuses')}</option>
                         {['draft', 'published', 'closed'].map((s) => <option key={s} value={s}>{t(s)}</option>)}
                     </select>

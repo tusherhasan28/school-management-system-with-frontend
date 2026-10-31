@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } f
 import { Spinner } from '@/components/ui/spinner';
 import { useT } from '@/lib/i18n';
 import { dashboard } from '@/routes';
+import { reportCards } from '@/routes/exams';
 import { show as guardianShow } from '@/routes/guardians';
 import { edit, index } from '@/routes/students';
 import { relationships } from './form';
@@ -35,10 +36,11 @@ type Props = {
         enrollments: { id: number; session: string; class: string; section: string | null; roll_no: string | null; status: string; enrolled_at: string; ended_at: string | null; end_reason: string | null }[];
     };
     attendance: Record<string, number>;
+    results: { exam_id: number; exam: string; published: boolean; gpa: string | null; letter_grade: string | null; status: string; percentage: string; position: number | null; class_id: number; section_id: number | null; can_print: boolean }[];
     can: { update: boolean; changeStatus: boolean; manageGuardians: boolean };
 };
 
-export default function StudentShow({ student, attendance, can }: Props) {
+export default function StudentShow({ student, attendance, results, can }: Props) {
     const t = useT();
     const [linking, setLinking] = useState(false);
     const [ending, setEnding] = useState(false);
@@ -129,6 +131,24 @@ export default function StudentShow({ student, attendance, can }: Props) {
                         ))}
                     </div>
                 </section>
+
+                {results.length > 0 && (
+                    <section className="rounded-xl border border-border/70 bg-card">
+                        <h2 className="border-b border-border/70 px-5 py-3 font-medium">{t('Exam results')}</h2>
+                        <ul className="divide-y divide-border/70">
+                            {results.map((r) => (
+                                <li key={r.exam_id} className="grid gap-1 px-5 py-3 text-sm sm:grid-cols-[1fr_auto_auto_auto] sm:items-center sm:gap-4">
+                                    <span className="font-medium">{r.exam}{!r.published && <span className="ml-2 text-xs font-normal text-muted-foreground">({t('draft')})</span>}</span>
+                                    <span className="tabular-nums">{r.gpa !== null ? `${t('GPA')} ${r.gpa} · ` : ''}{r.letter_grade ?? '—'} · {r.percentage}%{r.position ? ` · ${t('Position')} ${r.position}` : ''}</span>
+                                    <StatusBadge status={r.status === 'pass' ? 'active' : 'suspended'} label={t('result_' + r.status)} />
+                                    {r.can_print ? (
+                                        <a className="text-primary hover:underline" target="_blank" rel="noreferrer" href={reportCards.url(r.exam_id, { query: { class: r.class_id, section: r.section_id ?? undefined, student: student.id } })}>{t('Report card')}</a>
+                                    ) : <span />}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
 
                 <section className="rounded-xl border border-border/70 bg-card">
                     <h2 className="border-b border-border/70 px-5 py-3 font-medium">{t('Enrollment history')}</h2>

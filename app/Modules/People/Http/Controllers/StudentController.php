@@ -155,12 +155,39 @@ class StudentController extends Controller
                 ->selectRaw('status, COUNT(*) as total')
                 ->groupBy('status')
                 ->pluck('total', 'status'),
+            'results' => $this->examResults($student, $user),
             'can' => [
                 'update' => $user->can('update', $student),
                 'changeStatus' => $user->can('changeStatus', $student),
                 'manageGuardians' => $user->can('update', $student) && $user->can('guardians.manage'),
             ],
         ]);
+    }
+
+    /**
+     * Current results of each exam: published ones for anyone who may view
+     * the student, unpublished drafts only for results.view.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function examResults(Student $student, \App\Models\User $user): array
+    {
+        $access = app(\App\Modules\Exams\Services\ExamAccess::class);
+
+        return \App\Modules\Exams\Models\ExamResult::query()
+            ->with('examination:id,school_id,name,name_bn,status,academic_session_id,published_at,current_calculation_id')
+            ->where('student_id', $student->id)
+            ->whereHas('examination', fn ($q) => $q->whereColumn('examinations.current_calculation_id', 'exam_results.result_calculation_id')
+                ->when(! $user->can('results.view'), fn ($q) => $q->where('status', 'published')))
+            ->orderByDesc('examination_id')
+            ->get()
+            ->map(fn ($r) => [
+                'exam_id' => $r->examination_id, 'exam' => \App\Support\Localization\Localized::name($r->examination->name, $r->examination->name_bn), 'published' => $r->examination->isPublished(),
+                'gpa' => $r->gpa, 'letter_grade' => $r->letter_grade, 'status' => $r->result_status, 'percentage' => $r->percentage,
+                'position' => $r->section_position, 'class_id' => $r->class_id, 'section_id' => $r->section_id,
+                'can_print' => $access->canViewResults($user, $r->examination, $r->class_id, $r->section_id),
+            ])
+            ->all();
     }
 
     public function edit(Student $student): Response

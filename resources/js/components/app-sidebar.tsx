@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Building2, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, FileUp, GraduationCap, LayoutGrid, ListChecks, NotebookPen, UserCog, UserRound, Users } from 'lucide-react';
+import { Award, BookOpen, Building2, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, FilePen, FileUp, GraduationCap, LayoutGrid, ListChecks, NotebookPen, Settings2, UserCog, UserRound, Users } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -18,7 +18,9 @@ import { index as admissions } from '@/routes/admissions';
 import { index as assignments } from '@/routes/assignments';
 import { index as attendance } from '@/routes/attendance';
 import { index as calendar } from '@/routes/calendar';
+import { index as exams, setup as examSetup } from '@/routes/exams';
 import { index as homework } from '@/routes/homework';
+import { index as marks } from '@/routes/marks';
 import { index as timetable, mine as myTimetable } from '@/routes/timetable';
 import { index as campuses } from '@/routes/campuses';
 import { index as guardians } from '@/routes/guardians';
@@ -50,6 +52,12 @@ export function AppSidebar() {
         ...when('timetable.view', { title: t('Class timetable'), href: timetable(), icon: CalendarRange }),
         ...when('assignments.manage', { title: t('Teacher assignments'), href: assignments(), icon: UserCog }),
         { title: t('Calendar & holidays'), href: calendar(), icon: CalendarDays },
+    ];
+
+    const examItems: NavItem[] = [
+        ...(can('marks.enter') || can('marks.enter_all') || can('marks.verify') ? [{ title: t('Marks entry'), href: marks(), icon: FilePen }] : []),
+        ...(['exams.manage', 'results.view', 'marks.verify', 'marks.enter_all', 'results.approve', 'results.publish'].some(can) ? [{ title: t('Exams & results'), href: exams(), icon: Award }] : []),
+        ...when('exams.manage', { title: t('Exam setup'), href: examSetup(), icon: Settings2 }),
     ];
 
     const setupItems: NavItem[] = [
@@ -89,6 +97,7 @@ export function AppSidebar() {
             <SidebarContent>
                 <NavMain items={items} label={t('Manage')} />
                 <NavMain items={teachingItems} label={t('Teaching')} />
+                {examItems.length > 0 && <NavMain items={examItems} label={t('Examinations')} />}
                 {setupItems.length > 0 && <NavMain items={setupItems} label={t('School setup')} />}
             </SidebarContent>
 

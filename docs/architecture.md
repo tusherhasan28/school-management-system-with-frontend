@@ -29,6 +29,8 @@ app/
     Teaching/             Teacher assignments, TeachingScope/TeachingAccess, timetable, calendar
     Attendance/           Attendance sessions, marks, corrections, absence notification job
     Homework/             Homework, attachments, submissions and grading
+    Exams/                Exam setup, grading scales, marks entry, results, report cards
+      Grading/            Pure grading engine (no DB): Hundredths, GradingConfig, GradingRules, GradingEngine
   Support/Authorization/  TenantPolicy base (permission + same-school check)
   Services/Audit/         AuditLogger (tenant) and PlatformAuditLogger
 ```
@@ -172,8 +174,13 @@ every environment. Guest redirects choose the login page by host, not path.
 
 ## 6. Money, marks, time
 
-- `DECIMAL(12,2)` for money, `DECIMAL(7,2)` for marks. No floats; PHP side uses
-  `brick/math` (already a Laravel dependency) for arithmetic.
+- `DECIMAL(12,2)` for money, `DECIMAL(7,2)` for marks. No floats. The grading engine
+  works in integer hundredths (`Hundredths`), so results are identical on every
+  server; percentages are rounded down to 0.01 before banding, and GPA rounding is a
+  per-scale rule.
+- Results are reproducible: every calculation stores the grading configuration and
+  exam setup it used, the engine version and a hash of the marks
+  (`ResultService::reproduces()` re-runs a stored version and compares).
 - Database stores UTC (`APP_TIMEZONE=UTC`); display and school-local date logic use
   the school's timezone (default `Asia/Dhaka`).
 
@@ -195,6 +202,8 @@ every environment. Guest redirects choose the login page by host, not path.
 | Inaccessible school response | 503 generic page (`errors/school-unavailable`) | `ResolveTenant` |
 | Platform admin language | English | `TENANCY_PLATFORM_LOCALE` |
 | Platform roles | Fixed enum (`PlatformRole`), not Spatie | `app/Enums/PlatformRole.php` |
+| Report card output | Browser print / "Save as PDF" (correct Bangla shaping, no server PDF dependency) | `pages/app/exams/report-cards.tsx` |
+| Grading defaults | GPA 5 preset with half-up GPA rounding, 4th-subject bonus above 2.00 — editable per scale | `GradingPresets`, scale editor |
 | Brand accent | Deep teal `oklch(0.46 0.085 185)` | `resources/css/app.css` |
 
 ## 9. Trade-offs
