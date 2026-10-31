@@ -333,6 +333,15 @@ Route::middleware(['auth:web', 'active', 'verified', 'staff'])->prefix('app')->g
     // Milestone 7: support, subscription, messaging
     Route::get('subscription', [\App\Modules\Billing\Http\Controllers\SchoolSubscriptionController::class, 'show'])->name('subscription.show');
     Route::get('subscription/invoices/{invoice}', [\App\Modules\Billing\Http\Controllers\SchoolSubscriptionController::class, 'invoice'])->whereNumber('invoice')->name('subscription.invoice');
+    Route::controller(\App\Modules\Messaging\Http\Controllers\MessagesController::class)->prefix('messages')->name('messages.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'send')->middleware('throttle:10,1')->name('send');
+        Route::post('logs/{log}/retry', 'retry')->whereNumber('log')->middleware('throttle:60,1')->name('retry');
+        Route::get('settings', 'settings')->name('settings');
+        Route::put('settings/provider', 'saveProvider')->name('provider');
+        Route::put('settings/automatic', 'saveAutomatic')->name('automatic');
+        Route::put('settings/template', 'saveTemplate')->name('template');
+    });
     Route::controller(SupportController::class)->prefix('support')->name('support.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->middleware('throttle:10,1')->name('store');

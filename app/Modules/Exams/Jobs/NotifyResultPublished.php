@@ -5,17 +5,15 @@ namespace App\Modules\Exams\Jobs;
 use App\Jobs\Middleware\EnsureTenantIsAccessible;
 use App\Modules\Exams\Models\Examination;
 use App\Modules\Exams\Models\ExamResult;
-use App\Modules\Exams\Notifications\ResultPublished;
-use App\Support\Tenancy\TenantContext;
+use App\Modules\Messaging\Services\MessageService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Notification;
 
 /**
- * After results are published: email each student's primary guardian a short
- * summary (grade, GPA, pass/fail). Only the current calculation is used, and
+ * After results are published: send each student's primary guardian a short
+ * summary (grade, GPA, pass/fail) by the school's chosen channels. Only the current calculation is used, and
  * nothing is sent if the exam was reopened before the job ran.
  */
 class NotifyResultPublished implements ShouldQueue
@@ -32,7 +30,7 @@ class NotifyResultPublished implements ShouldQueue
         return [new EnsureTenantIsAccessible];
     }
 
-    public function handle(TenantContext $tenant): void
+    public function handle(MessageService $messages): void
     {
         $exam = Examination::query()->find($this->examinationId);
 
@@ -40,23 +38,21 @@ class NotifyResultPublished implements ShouldQueue
             return;
         }
 
-        ExamResult::query()
-            ->with(['student' => fn ($q) => $q->select(['id', 'school_id', 'full_name'])->with(['guardians' => fn ($q) => $q->wherePivot('is_primary', true)])])
-            ->where('result_calculation_id', $exam->current_calculation_id)
-            ->chunkById(200, function ($results) use ($exam, $tenant) {
-                foreach ($results as $result) {
-                    $guardian = $result->student?->guardians->first();
+        $channels = $messages->channelsFor('results.published');
+        $locale = app(\App\Support\Tenancy\TenantContext::class)->require()->locale === 'en' ? 'en' : 'bn';
 
-                    if ($guardian?->email) {
-                        Notification::route('mail', $guardian->email)->notify(new ResultPublished(
-                            $tenant->require()->name,
-                            $exam->name,
-                            $result->student->full_name,
-                            $result->result_status,
-                            $result->letter_grade,
-                            $result->gpa,
-                        ));
-                    }
+        ExamResult::query()
+            ->with(['student' => fn ($q) => $q->select(['id', 'school_id', 'full_name', 'name_bn'])->with(['guardians' => fn ($q) => $q->wherePivot('is_primary', true)])])
+            ->where('result_calculation_id', $exam->current_calculation_id)
+            ->chunkById(200, function ($results) use ($exam, $messages, $channels, $locale) {
+                $recipients = $results->map(function (ExamResult $r) use ($exam, $messages, $locale) {
+                    $summary = __('result_'.$r->result_status, [], $locale).($r->letter_grade ? ', '.$r->letter_grade : '').($r->gpa !== null ? ', GPA '.$r->gpa : '');
+
+                    return $r->student ? $messages->guardianRecipient($r->student, ['exam' => $locale === 'bn' && $exam->name_bn ? $exam->name_bn : $exam->name, 'result' => $summary]) : null;
+                })->filter()->values()->all();
+
+                if ($recipients !== []) {
+                    $messages->send('results.published', $recipients, $channels);
                 }
             });
     }

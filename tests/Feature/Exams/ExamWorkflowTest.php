@@ -10,12 +10,11 @@ use App\Modules\Exams\Models\ExamResult;
 use App\Modules\Exams\Models\ExamSubject;
 use App\Modules\Exams\Models\GradingScale;
 use App\Modules\Exams\Models\ResultCalculation;
-use App\Modules\Exams\Notifications\ResultPublished;
+use App\Modules\Messaging\Mail\SchoolMessage;
 use App\Modules\Exams\Services\GradingScaleService;
 use App\Modules\Exams\Services\ResultService;
 use App\Modules\People\Models\Student;
 use App\Models\ActivityLog;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Tests\Concerns\CreatesAcademicStructure;
 use Tests\Concerns\CreatesTeachers;
@@ -359,7 +358,7 @@ class ExamWorkflowTest extends TenantTestCase
 
     public function test_guardians_are_emailed_when_results_are_published(): void
     {
-        Notification::fake();
+        \Illuminate\Support\Facades\Mail::fake();
         $exam = $this->exam();
         $this->enterAll($exam);
         $this->st['s1']->guardians()->first()->update(['email' => 'parent1@example.test']);
@@ -367,9 +366,9 @@ class ExamWorkflowTest extends TenantTestCase
         $this->actingAs($this->owner)->post(route('exams.approve', $exam));
         $this->actingAs($this->owner)->post(route('exams.publish', $exam), ['notify' => true]); // queue is sync in tests
 
-        Notification::assertSentOnDemand(ResultPublished::class, fn ($n, $channels, $notifiable) => $notifiable->routes['mail'] === 'parent1@example.test'
-            && $n->student === 'S1' && $n->gpa === '4.17' && $n->grade === 'A');
-        Notification::assertSentOnDemandTimes(ResultPublished::class, 1);
+        \Illuminate\Support\Facades\Mail::assertSent(SchoolMessage::class, fn ($m) => $m->hasTo('parent1@example.test')
+            && str_contains($m->text, 'S1') && str_contains($m->text, 'GPA 4.17') && str_contains($m->text, 'Half-Yearly'));
+        \Illuminate\Support\Facades\Mail::assertSentCount(1);
     }
 
     public function test_other_schools_cannot_reach_exams_or_sheets(): void

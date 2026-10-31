@@ -21,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // One registry of installed payment gateway adapters per process.
         $this->app->singleton(\App\Modules\Finance\Gateways\GatewayRegistry::class);
+        // Installed SMS adapters (config/messaging.php).
+        $this->app->singleton(\App\Modules\Messaging\Providers\SmsProviderRegistry::class, fn () => new \App\Modules\Messaging\Providers\SmsProviderRegistry(config('messaging.sms_providers', [])));
     }
 
     /**
@@ -46,6 +48,13 @@ class AppServiceProvider extends ServiceProvider
         foreach ($policies as $model => $policy) {
             Gate::policy($model, $policy);
         }
+
+        // SMS jobs: at most the provider's per-minute rate, per school (Redis-backed limiter).
+        \Illuminate\Support\Facades\RateLimiter::for('messaging-sms', function (object $job) {
+            $per = $job->perMinute ?? 60;
+
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute($per)->by('sms:'.$job->schoolId);
+        });
     }
 
     /**

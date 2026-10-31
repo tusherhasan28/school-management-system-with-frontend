@@ -5,7 +5,8 @@ namespace Tests\Feature\Attendance;
 use App\Modules\Attendance\Models\AttendanceCorrection;
 use App\Modules\Attendance\Models\AttendanceSession;
 use App\Modules\Attendance\Models\StudentAttendance;
-use App\Modules\Attendance\Notifications\StudentAbsent;
+use App\Modules\Messaging\Mail\SchoolMessage;
+use App\Modules\Messaging\Models\NotificationLog;
 use App\Modules\Attendance\Services\AttendanceService;
 use App\Modules\People\Models\Student;
 use App\Modules\Setup\Services\SchoolSettings;
@@ -15,7 +16,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\CreatesAcademicStructure;
 use Tests\Concerns\CreatesTeachers;
 use Tests\TenantTestCase;
@@ -197,19 +197,21 @@ class AttendanceTest extends TenantTestCase
 
     public function test_guardians_are_emailed_about_absences_when_enabled(): void
     {
-        Notification::fake();
+        \Illuminate\Support\Facades\Mail::fake();
         config(['queue.default' => 'sync']);
         $this->kids[1]->guardians()->first()->update(['email' => 'tanvir.parent@example.com']);
 
         $this->submitMarks(['present', 'absent', 'present'], finalize: true);
-        Notification::assertNothingSent();
+        \Illuminate\Support\Facades\Mail::assertNothingSent();
 
         app(SchoolSettings::class)->put('attendance.notify_absent', true);
         Carbon::setTestNow('2026-03-11 09:00:00');
         $this->submitMarks(['present', 'absent', 'present'], finalize: true, date: '2026-03-11');
 
-        Notification::assertSentOnDemand(StudentAbsent::class, fn ($n, $channels, $notifiable) => $notifiable->routes['mail'] === 'tanvir.parent@example.com' && $n->student === 'Tanvir');
-        Notification::assertSentOnDemandTimes(StudentAbsent::class, 1);
+        \Illuminate\Support\Facades\Mail::assertSent(SchoolMessage::class, fn ($m) => $m->hasTo('tanvir.parent@example.com') && str_contains($m->text, 'Tanvir') && str_contains($m->text, '2026-03-11'));
+        \Illuminate\Support\Facades\Mail::assertSentCount(1);
+        $log = NotificationLog::query()->sole();
+        $this->assertSame(['mail', 'sent', 'attendance.absent', 1], [$log->channel, $log->status, $log->template_key, $log->attempts]);
     }
 
     public function test_period_attendance_is_separate_from_daily_and_must_match_the_day(): void
