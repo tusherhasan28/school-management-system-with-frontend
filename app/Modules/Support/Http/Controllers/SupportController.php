@@ -73,8 +73,9 @@ class SupportController extends Controller
     public function reply(Request $request, int $ticket): RedirectResponse
     {
         $this->authorize('support.manage');
+        $item = $this->ticket($ticket); // look up first: another school's id is a 404 before anything else
         $data = $request->validate(['message' => ['required', 'string', 'max:10000']]);
-        $this->support->replyFromSchool($this->ticket($ticket), $request->user(), $data['message']);
+        $this->support->replyFromSchool($item, $request->user(), $data['message']);
 
         return back();
     }
@@ -90,8 +91,9 @@ class SupportController extends Controller
     public function decide(Request $request, int $grant): RedirectResponse
     {
         $this->authorize('support.manage');
+        $item = $this->grant($grant);
         $data = $request->validate(['approve' => ['required', 'boolean']]);
-        $this->support->decide($this->grant($grant), $request->user(), (bool) $data['approve']);
+        $this->support->decide($item, $request->user(), (bool) $data['approve']);
         Inertia::flash('toast', ['type' => 'success', 'message' => __('support.decided')]);
 
         return back();
