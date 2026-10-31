@@ -306,8 +306,9 @@ class SubscriptionService
             return null;
         }
 
-        $sub->loadMissing('plan');
-        $description = sprintf('%s plan, %s (%s – %s)', $sub->plan->name, $sub->billing_cycle, $start->toDateString(), $end->subDay()->toDateString());
+        $sub->loadMissing(['plan', 'school']);
+        $tz = $sub->school->timezone ?: 'Asia/Dhaka';
+        $description = sprintf('%s plan, %s (%s – %s)', $sub->plan->name, $sub->billing_cycle, $start->setTimezone($tz)->toDateString(), $end->setTimezone($tz)->subDay()->toDateString());
         $invoice = $this->newInvoice($sub->school_id, $sub->id, $description, $sub->amount, $due, $start, $end, $key);
         $this->audit->platform('billing.invoice_issued', $invoice, $sub->school_id, ['total' => $invoice->total, 'period_start' => $start->toDateString()]);
 

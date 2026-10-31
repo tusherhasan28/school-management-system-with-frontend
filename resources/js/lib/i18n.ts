@@ -69,6 +69,15 @@ export function formatDate(date: string | null | undefined, locale = current.loc
     }).format(new Date(`${date.slice(0, 10)}T00:00:00Z`));
 }
 
+/** The calendar day of a timestamp in the school's timezone (for period ends, due dates, …). */
+export function formatDay(iso: string | null | undefined, locale = current.locale, timeZone = current.timeZone) {
+    if (!iso) {
+        return '—';
+    }
+
+    return new Intl.DateTimeFormat(locale === 'bn' ? 'bn-BD' : 'en-GB', { dateStyle: 'medium', timeZone }).format(new Date(iso));
+}
+
 /** Short weekday name for an ISO day number (1 = Monday … 7 = Sunday). */
 export function weekdayName(isoDay: number, locale = current.locale, style: 'short' | 'long' = 'short') {
     // 2024-01-01 was a Monday.

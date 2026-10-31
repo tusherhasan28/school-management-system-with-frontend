@@ -1,18 +1,21 @@
-import { Head } from '@inertiajs/react';
-import { Check, CreditCard, X } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Check, CreditCard, Download, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { PlatformInvoice, Subscription } from '@/components/billing/shared';
 import { InvoiceBadge, SubscriptionBadge } from '@/components/billing/shared';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
-import { formatDate, formatMoney, useT } from '@/lib/i18n';
+import { formatDay, formatDateTime, formatMoney, useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
+import { download as exportDownload, store as exportStore } from '@/routes/data-exports';
 import { invoice as invoiceUrl, show } from '@/routes/subscription';
 
 type Feature = { key: string; type: 'limit' | 'switch'; unit: string | null; value: number | boolean | null; used: number | null };
-type Props = { subscription: Subscription | null; features: Feature[]; invoices: PlatformInvoice[]; instructions: string | null };
+type ExportRow = { id: number; status: string; size_bytes: number | null; counts: Record<string, number> | null; created_at: string | null; expires_at: string | null };
+type Props = { subscription: Subscription | null; features: Feature[]; invoices: PlatformInvoice[]; instructions: string | null; exports: ExportRow[] | null };
 
-export default function SchoolSubscription({ subscription: sub, features, invoices, instructions }: Props) {
+export default function SchoolSubscription({ subscription: sub, features, invoices, instructions, exports }: Props) {
     const t = useT();
     const limits = features.filter((f) => f.type === 'limit');
     const switches = features.filter((f) => f.type === 'switch');
@@ -34,8 +37,8 @@ export default function SchoolSubscription({ subscription: sub, features, invoic
                         <dl className="grid gap-1 text-sm sm:text-right">
                             <dd><SubscriptionBadge status={sub.status} /></dd>
                             <dt className="text-muted-foreground">{sub.status === 'trialing' ? t('Trial ends') : t('Current period ends')}</dt>
-                            <dd>{formatDate(sub.current_period_end)}</dd>
-                            {sub.grace_ends_at && <dd className="text-rose-700 dark:text-rose-400">{t('Pay by :date to avoid suspension', { date: formatDate(sub.grace_ends_at) })}</dd>}
+                            <dd>{formatDay(sub.current_period_end)}</dd>
+                            {sub.grace_ends_at && <dd className="text-rose-700 dark:text-rose-400">{t('Pay by :date to avoid suspension', { date: formatDay(sub.grace_ends_at) })}</dd>}
                             {sub.cancel_at_period_end && <dd className="text-amber-700">{t('Ends at the end of this period')}</dd>}
                         </dl>
                     </section>
@@ -80,13 +83,35 @@ export default function SchoolSubscription({ subscription: sub, features, invoic
                         <ul className="mt-2 divide-y text-sm">
                             {invoices.map((i) => (
                                 <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                                    <div><a href={invoiceUrl.url(i.id)} className="font-medium hover:underline">{i.invoice_number}</a><p className="text-muted-foreground">{i.description} · {t('Due')} {formatDate(i.due_at)}</p></div>
+                                    <div><a href={invoiceUrl.url(i.id)} className="font-medium hover:underline">{i.invoice_number}</a><p className="text-muted-foreground">{i.description} · {t('Due')} {formatDay(i.due_at)}</p></div>
                                     <div className="flex items-center gap-3"><span className="tabular-nums">{formatMoney(i.total)}</span><InvoiceBadge invoice={i} /></div>
                                 </li>
                             ))}
                         </ul>
                     )}
                 </section>
+
+                {exports && (
+                    <section className="rounded-xl border border-border/70 bg-card p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h2 className="font-medium">{t('Export all school data')}</h2>
+                                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t('A ZIP of spreadsheets (CSV) with students, guardians, staff, enrolments, attendance, results, invoices, payments and notices. Kept for 7 days. National ID and birth registration numbers are not included.')}</p>
+                            </div>
+                            <Button variant="outline" disabled={exports.some((e) => e.status === 'queued' || e.status === 'processing')} onClick={() => router.post(exportStore.url(), {}, { preserveScroll: true })}>{t('Prepare export')}</Button>
+                        </div>
+                        {exports.length > 0 && (
+                            <ul className="mt-3 divide-y text-sm">
+                                {exports.map((e) => (
+                                    <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                                        <span>{formatDateTime(e.created_at)} · {t(`export_${e.status}`)}{e.size_bytes ? ` · ${(e.size_bytes / 1048576).toFixed(1)} MB` : ''}</span>
+                                        {e.status === 'ready' && <Button size="sm" variant="outline" asChild><a href={exportDownload.url(e.id)}><Download />{t('Download')}</a></Button>}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+                )}
             </div>
         </>
     );

@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { AlertTriangle } from 'lucide-react';
-import { formatDate, useT } from '@/lib/i18n';
+import { formatDay, useT } from '@/lib/i18n';
 import { show } from '@/routes/subscription';
 
 /** Shown to people who can see the subscription when action is needed soon. */
@@ -13,9 +13,9 @@ export function SubscriptionBanner() {
     }
 
     const text = {
-        past_due: t('Payment is overdue. Pay by :date to keep the school open.', { date: formatDate(subscriptionNotice.date) }),
-        trial_ending: t('Your trial ends on :date.', { date: formatDate(subscriptionNotice.date) }),
-        cancelling: t('Your subscription ends on :date.', { date: formatDate(subscriptionNotice.date) }),
+        past_due: t('Payment is overdue. Pay by :date to keep the school open.', { date: formatDay(subscriptionNotice.date) }),
+        trial_ending: t('Your trial ends on :date.', { date: formatDay(subscriptionNotice.date) }),
+        cancelling: t('Your subscription ends on :date.', { date: formatDay(subscriptionNotice.date) }),
     }[subscriptionNotice.status];
 
     return (

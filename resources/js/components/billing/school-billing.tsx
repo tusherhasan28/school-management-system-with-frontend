@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { formatDate, formatMoney, useT } from '@/lib/i18n';
+import { formatDay, formatMoney, useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { show as showInvoice } from '@/routes/platform/invoices';
 import { assign, cancel, extendTrial, invoice as manualInvoice, reactivate, suspend } from '@/routes/platform/schools/billing';
@@ -48,9 +48,9 @@ export function SchoolBillingPanel({ schoolId, billing, canManage }: { schoolId:
                 </div>
                 {sub && (
                     <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-                        <div><dt className="text-muted-foreground">{t('Current period')}</dt><dd>{formatDate(sub.current_period_start)} – {formatDate(sub.current_period_end)}</dd></div>
-                        {sub.trial_ends_at && <div><dt className="text-muted-foreground">{t('Trial ends')}</dt><dd>{formatDate(sub.trial_ends_at)}</dd></div>}
-                        {sub.grace_ends_at && <div><dt className="text-muted-foreground">{t('Grace ends')}</dt><dd className="text-rose-700 dark:text-rose-400">{formatDate(sub.grace_ends_at)}</dd></div>}
+                        <div><dt className="text-muted-foreground">{t('Current period')}</dt><dd>{formatDay(sub.current_period_start)} – {formatDay(sub.current_period_end)}</dd></div>
+                        {sub.trial_ends_at && <div><dt className="text-muted-foreground">{t('Trial ends')}</dt><dd>{formatDay(sub.trial_ends_at)}</dd></div>}
+                        {sub.grace_ends_at && <div><dt className="text-muted-foreground">{t('Grace ends')}</dt><dd className="text-rose-700 dark:text-rose-400">{formatDay(sub.grace_ends_at)}</dd></div>}
                     </dl>
                 )}
                 {canManage && sub && (
@@ -104,7 +104,7 @@ export function SchoolBillingPanel({ schoolId, billing, canManage }: { schoolId:
                     <ul className="mt-2 divide-y text-sm">
                         {billing.history.map((h) => (
                             <li key={h.id} className="flex flex-wrap justify-between gap-2 py-2">
-                                <span>{h.plan?.name} · {t(h.billing_cycle)} · {formatDate(h.starts_at)} – {formatDate(h.ended_at)}</span>
+                                <span>{h.plan?.name} · {t(h.billing_cycle)} · {formatDay(h.starts_at)} – {formatDay(h.ended_at)}</span>
                                 <SubscriptionBadge status={h.status} />
                             </li>
                         ))}

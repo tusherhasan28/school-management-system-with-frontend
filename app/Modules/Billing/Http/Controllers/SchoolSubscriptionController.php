@@ -30,6 +30,10 @@ class SchoolSubscriptionController extends Controller
             'invoices' => PlatformInvoice::query()->where('school_id', $this->tenant->require()->id)->where('status', '!=', 'void')
                 ->orderByDesc('issued_at')->orderByDesc('id')->limit(36)->get()->map(fn ($i) => $this->present->invoice($i)),
             'instructions' => config('billing.payment_instructions'),
+            'exports' => $request->user()->can('settings.manage') ? \App\Modules\Exports\Models\DataExport::query()->latest('id')->limit(5)->get()->map(fn ($e) => [
+                'id' => $e->id, 'status' => $e->isDownloadable() || $e->status !== 'ready' ? $e->status : 'expired', 'size_bytes' => $e->size_bytes,
+                'counts' => $e->counts, 'created_at' => $e->created_at?->toIso8601String(), 'expires_at' => $e->expires_at?->toIso8601String(),
+            ]) : null,
         ]);
     }
 

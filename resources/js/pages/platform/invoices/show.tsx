@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { formatDate, formatDateTime, formatMoney, useT } from '@/lib/i18n';
+import { formatDay, formatDateTime, formatMoney, useT } from '@/lib/i18n';
 import { dashboard } from '@/routes/platform';
 import { index, pay, voidMethod as voidInvoice } from '@/routes/platform/invoices';
 import { show as showSchool } from '@/routes/platform/schools';
@@ -45,8 +45,8 @@ export default function InvoiceShow({ invoice, school, payments, instructions, c
                             <div className="mt-1"><InvoiceBadge invoice={invoice} /></div>
                         </div>
                         <dl className="text-right text-sm">
-                            <dt className="text-muted-foreground">{t('Issued')}</dt><dd>{formatDate(invoice.issued_at)}</dd>
-                            <dt className="mt-1 text-muted-foreground">{t('Due')}</dt><dd>{formatDate(invoice.due_at)}</dd>
+                            <dt className="text-muted-foreground">{t('Issued')}</dt><dd>{formatDay(invoice.issued_at)}</dd>
+                            <dt className="mt-1 text-muted-foreground">{t('Due')}</dt><dd>{formatDay(invoice.due_at)}</dd>
                         </dl>
                     </header>
                     <section className="mt-4 text-sm">

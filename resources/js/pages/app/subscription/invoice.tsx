@@ -3,7 +3,7 @@ import { Printer } from 'lucide-react';
 import type { PlatformInvoice } from '@/components/billing/shared';
 import { InvoiceBadge } from '@/components/billing/shared';
 import { Button } from '@/components/ui/button';
-import { formatDate, formatDateTime, formatMoney, useT } from '@/lib/i18n';
+import { formatDay, formatDateTime, formatMoney, useT } from '@/lib/i18n';
 
 type Props = {
     invoice: PlatformInvoice & { subtotal: string; discount: string; tax: string };
@@ -26,7 +26,7 @@ export default function SubscriptionInvoice({ invoice, payments, school, platfor
                 <article className="sheet mx-auto max-w-3xl rounded-xl border bg-white p-8 text-zinc-900 shadow-sm">
                     <header className="flex flex-wrap items-start justify-between gap-4 border-b pb-4">
                         <div><p className="text-lg font-semibold">{platform}</p><p className="text-sm text-zinc-500">{t('Invoice')} {invoice.invoice_number}</p></div>
-                        <div className="text-right text-sm"><InvoiceBadge invoice={invoice} /><p className="mt-1">{t('Issued')} {formatDate(invoice.issued_at)}</p><p>{t('Due')} {formatDate(invoice.due_at)}</p></div>
+                        <div className="text-right text-sm"><InvoiceBadge invoice={invoice} /><p className="mt-1">{t('Issued')} {formatDay(invoice.issued_at)}</p><p>{t('Due')} {formatDay(invoice.due_at)}</p></div>
                     </header>
                     <section className="mt-4 text-sm">
                         <p className="text-zinc-500">{t('Billed to')}</p>

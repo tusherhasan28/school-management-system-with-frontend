@@ -187,8 +187,46 @@ administration under `/app` is the deliberate namespace that keeps both.
   `portal:parent|student|teacher` middleware gates each area; `staff` middleware
   redirects parent/student-only logins away from `/app`. A teacher who is also a
   parent has one login with both roles.
-- **Support access to tenant data** (Milestone 7): a `support_access_grants` row with
-  reason, expiry and approver; every access is audited.
+- **Support access to tenant data** (Milestone 7): a platform user with
+  `support.manage` requests access with a reason and 1–24 hours
+  (`support_access_grants`). The school's admin approves (the clock starts then),
+  rejects or revokes it. Only that agent, only while approved and unexpired, can
+  open a read-only snapshot (users and roles, recent activity, failed messages,
+  usage counts); every view increments a counter and is written to both the
+  platform and the school audit logs. There is no impersonation.
+
+## 4a. Billing (Milestone 7)
+
+- Central tables `plans`, `plan_features`, `subscriptions`, `platform_invoices`,
+  `platform_payments` belong to the platform and reference `schools.id` with plain
+  foreign keys (no tenant scope). School screens read them with the school id of
+  the resolved host only, and have no write endpoints.
+- `PlanFeatures` is the catalogue of keys the code enforces; values are rows in
+  `plan_features`. `Entitlements` reads the current subscription's plan for the
+  tenant and throws a validation error before an action would pass a limit.
+  `UsageMeter` counts active students, staff, SMS parts this month and storage.
+- `SubscriptionService::tick()` (daily `billing:run`) issues renewal invoices,
+  rolls periods, starts grace (`past_due`) and suspends; payments and voids call
+  `settle()`. School status moves through `SchoolLifecycle`, so the existing
+  access rules apply; a school suspended by staff for another reason is not
+  reactivated by billing (suspension reasons from billing start with
+  "subscription").
+
+## 4b. Messaging (Milestone 7)
+
+- `MessageService::send()` renders the template per recipient language
+  (`MessageTemplates`: built-in Bangla/English text, school overrides in
+  `notification_templates`), writes one `notification_logs` row per recipient and
+  channel, and dispatches `DeliverMessage` on the `messages` queue after commit.
+- `DeliverMessage` restores the tenant (QueueTenancy), skips suspended schools,
+  is rate-limited per school at the provider's per-minute rate
+  (`RateLimiter::for('messaging-sms')`), retries with backoff, marks permanent
+  failures at once and never sends a message whose log is already `sent`.
+- SMS adapters implement `SmsProvider` and are listed in `config/messaging.php`;
+  none for a real gateway ship yet. School credentials live in
+  `sms_provider_accounts.credentials` (encrypted, hidden, write-only in the UI).
+- In-app notifications use Laravel's `notifications` table and are only read
+  through the signed-in user; notification links must be same-site paths.
 
 ### Admin-host-only tools
 Horizon runs on `admin.APP_DOMAIN` only (`config/horizon.php` domain + `platform.host`
@@ -232,6 +270,12 @@ every environment. Guest redirects choose the login page by host, not path.
 | Inaccessible school response | 503 generic page (`errors/school-unavailable`) | `ResolveTenant` |
 | Platform admin language | English | `TENANCY_PLATFORM_LOCALE` |
 | Platform roles | Fixed enum (`PlatformRole`), not Spatie | `app/Enums/PlatformRole.php` |
+| Schools without a subscription | Not limited, listed as "unmanaged" on the platform | `Entitlements` |
+| Missing plan feature row | Fail-closed (switch off, limit 0) | `PlanFeatures::CATALOGUE` |
+| Renewal invoice lead time | 7 days | `BILLING_INVOICE_LEAD_DAYS` |
+| Payment instructions on invoices | From env, not code | `BILLING_PAYMENT_INSTRUCTIONS` |
+| SMS in development | "Log" provider (nothing sent) only in local/testing | `MESSAGING_ALLOW_LOG_SMS` |
+| Automatic message channels | Email until the school adds SMS | `config/messaging.php` defaults, Messages → Settings |
 | Report card output | Browser print / "Save as PDF" (correct Bangla shaping, no server PDF dependency) | `pages/app/exams/report-cards.tsx` |
 | Advance payments / credit | Not supported (payment ≤ amount owed) | `PaymentService::plan()` |
 | Late fees | Off until a school enables them | Fees → Setup |

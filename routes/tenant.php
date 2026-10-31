@@ -332,6 +332,8 @@ Route::middleware(['auth:web', 'active', 'verified', 'staff'])->prefix('app')->g
 
     // Milestone 7: support, subscription, messaging
     Route::get('subscription', [\App\Modules\Billing\Http\Controllers\SchoolSubscriptionController::class, 'show'])->name('subscription.show');
+    Route::post('data-exports', [\App\Modules\Exports\Http\Controllers\DataExportController::class, 'store'])->middleware('throttle:3,60')->name('data-exports.store');
+    Route::get('data-exports/{export}', [\App\Modules\Exports\Http\Controllers\DataExportController::class, 'download'])->name('data-exports.download');
     Route::get('subscription/invoices/{invoice}', [\App\Modules\Billing\Http\Controllers\SchoolSubscriptionController::class, 'invoice'])->whereNumber('invoice')->name('subscription.invoice');
     Route::controller(\App\Modules\Messaging\Http\Controllers\MessagesController::class)->prefix('messages')->name('messages.')->group(function () {
         Route::get('/', 'index')->name('index');

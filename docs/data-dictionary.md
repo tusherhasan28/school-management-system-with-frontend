@@ -373,6 +373,72 @@ Photos: `gallery_album_id`, `path`, `thumb_path` (re-encoded JPEGs under
 - `students.email`: for the student portal invitation.
 - `guardians.user_id` / `students.user_id` (from Milestone 2) now link portal logins.
 
+## Billing, support and messaging (Milestone 7)
+
+Central tables (no `school_id` tenant scope; `school_id` is a plain FK):
+
+### `plans` / `plan_features`
+Plans: `code` (unique), `name`, `name_bn`, `description`, `price_monthly`,
+`price_yearly`, `trial_days`, `grace_days`, `is_active` (can be assigned),
+`is_public` (pricing page), `sort_order`. Features: `plan_id`, `feature_key`
+(catalogue key), `feature_value` JSON (limit: integer or null = unlimited;
+switch: true/false). Unique `(plan_id, feature_key)`.
+
+### `subscriptions`
+`school_id`, `plan_id`, `status` (trialing/active/past_due/suspended/cancelled/expired),
+`billing_cycle` (monthly/yearly), `amount`, `starts_at`, `current_period_start`,
+`current_period_end`, `trial_ends_at`, `grace_ends_at`, `auto_renew`,
+`cancel_at_period_end`, `suspended_at`, `cancelled_at`, `ended_at`, `notes`.
+The latest live row is the school's current subscription.
+
+### `platform_invoices` / `platform_payments`
+Invoices: `invoice_number` (PINV-YYYY-00001), `school_id`, `subscription_id`,
+`description`, `period_start/end`, `subtotal`, `discount`, `tax`, `total`,
+`currency`, `status` (unpaid/paid/void), `issued_at`, `due_at`, `paid_at`,
+`voided_at`, `void_reason`, `period_key` (unique: one invoice per subscription
+period). Payments (append-only): `platform_invoice_id`, `method`, `gateway`
+(`manual`), `transaction_id` (unique per gateway), `amount`, `status`,
+`received_at`, `recorded_by`, `notes`.
+
+### `support_tickets` / `support_ticket_messages`
+Tickets: `reference` (SUP-00001), `school_id`, `created_by_user_id` (tenant user),
+`assigned_platform_user_id`, `subject`, `category`, `priority`, `status`
+(open/in_progress/waiting/resolved/closed), `last_activity_at`, `closed_at`.
+Messages: `sender_type` (platform/school), `sender_id`, `sender_name`, `message`,
+`is_internal` (platform-only note).
+
+### `support_access_grants`
+`school_id`, `platform_user_id`, `support_ticket_id`, `reason`, `duration_hours`,
+`status` (requested/approved/rejected/revoked/expired), `decided_by_user_id`,
+`decided_at`, `expires_at`, `view_count`.
+
+Tenant tables:
+
+### `notification_templates`
+School wording per `template_key` (attendance.absent, results.published,
+fees.reminder, general) and `channel` (sms/mail): `subject`, `subject_bn`,
+`body`, `body_bn`, `is_active`. Without a row the built-in text is used.
+
+### `notification_logs`
+One row per recipient and channel: `batch_id`, `user_id`, `channel`,
+`recipient` (phone 8801XXXXXXXXX or email; masked on screens), `recipient_name`,
+`template_key`, `locale`, `subject`, `body`, `segments` (SMS parts), `status`
+(queued/sent/failed/skipped), `provider`, `provider_reference`, `attempts`,
+`error_message` (secrets stripped), `sent_at`, `created_by`.
+
+### `sms_provider_accounts`
+`provider` (installed adapter key), `sender_id`, `credentials` (encrypted JSON,
+hidden), `is_enabled` (one at a time).
+
+### `data_exports`
+`requested_by`, `status` (queued/processing/ready/failed/expired), `path`
+(school storage), `size_bytes`, `counts` JSON per file, `error_message`,
+`expires_at` (7 days).
+
+### `notifications`
+Laravel database notifications (in-app centre): `notifiable_type/id` (tenant
+user), `data` JSON (translation key, parameters, same-site URL), `read_at`.
+
 ## Framework tables
 `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`
 (Laravel defaults; production uses Redis for sessions, cache and queues).

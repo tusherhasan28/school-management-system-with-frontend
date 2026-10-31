@@ -49,7 +49,7 @@ export default function MessagesIndex({ logs, filters, stats, smsAvailable, clas
     const reminder = form.data.audience === 'guardians_overdue';
 
     const columns: Column<Log>[] = [
-        { key: 'to', header: t('To'), cell: (l) => <><p className="font-medium">{l.name ?? '—'}</p><p className="text-xs text-muted-foreground">{l.channel === 'sms' ? 'SMS' : t('Email')} · {l.recipient}</p></> },
+        { key: 'to', header: t('Recipient'), cell: (l) => <><p className="font-medium">{l.name ?? '—'}</p><p className="text-xs text-muted-foreground">{l.channel === 'sms' ? 'SMS' : t('Email')} · {l.recipient}</p></> },
         { key: 'text', header: t('Message'), cell: (l) => <p className="line-clamp-2 max-w-md text-muted-foreground">{l.body}</p>, hideBelow: 'md' },
         { key: 'status', header: t('Status'), cell: (l) => (
             <div>
@@ -77,7 +77,7 @@ export default function MessagesIndex({ logs, filters, stats, smsAvailable, clas
                 <form className="grid gap-4 rounded-xl border border-border/70 bg-card p-5 lg:grid-cols-2" onSubmit={(e) => { e.preventDefault(); form.post(send.url(), { preserveScroll: true, onSuccess: () => form.reset('message') }); }}>
                     <div className="grid content-start gap-3">
                         <h2 className="font-medium">{t('Send a message')}</h2>
-                        <div className="grid gap-1.5"><Label htmlFor="audience">{t('To')}</Label>
+                        <div className="grid gap-1.5"><Label htmlFor="audience">{t('Recipient')}</Label>
                             <select id="audience" className={selectClass} value={form.data.audience} onChange={(e) => form.setData('audience', e.target.value)}>
                                 {['guardians_all', 'guardians_class', 'guardians_overdue', 'staff'].map((a) => <option key={a} value={a}>{t(`audience_msg_${a}`)}</option>)}
                             </select><InputError message={errors.audience} />

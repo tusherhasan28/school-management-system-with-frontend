@@ -103,29 +103,35 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ Fixed: backdated payments were stored as noon UTC instead of noon in the school's timezone
 - ✅ 269 automated tests (25 new for this milestone)
 
-## Milestone 7 — SaaS billing and notifications ⬜
-Plans + plan features/limits (database-configured), subscriptions (trial, renewal,
-past-due, grace, suspension, cancellation), platform invoices/payments, usage
-dashboard, support tickets, time-limited audited support access, email/SMS
-provider abstraction with Bangla/English templates and delivery logs.
+## Milestone 7 — SaaS billing and notifications ✅
+- ✅ Plans with prices, trial and grace days, and limits/switches stored in the database (`plan_features`); the code only knows the catalogue of keys (students, staff, SMS per month, storage, website, parent/student portal, online payments, SMS, bulk import). Platform plan editor
+- ✅ Limits enforced on the server for every path: student creation (form, admission, import rows), staff, import, website publishing, portal invitations and access, online payment, SMS quota. A school has no endpoint that changes its plan; schools without a subscription are listed as "unmanaged" and not limited
+- ✅ Subscriptions: assign/replace, trial, monthly/yearly, renewal invoices 7 days before the period ends, `past_due` with the plan's grace period, automatic suspension, payment reactivates, cancel now or at period end, expiry without auto-renewal, trial extension. Daily `billing:run`; every step idempotent; school status follows (data is never deleted)
+- ✅ Platform invoices (numbered, voidable, never deleted) and manual payments (full amount, reference required, unique per reference); printable for platform and school
+- ✅ Platform screens: plans, subscriptions (incl. schools without one), invoices with totals, school billing panel with usage against limits, dashboard MRR / past due / open tickets
+- ✅ School screens: subscription with usage and invoices, warning banner for overdue/trial ending/cancelling (only for people who can see billing), full data export (ZIP of CSV, 7 days)
+- ✅ Support tickets both ways with internal platform notes; school-approved, time-limited support access with a read-only snapshot, every view audited on both sides
+- ✅ Messaging: SMS provider interface and registry (test-mode log provider only, no invented gateway), school provider settings with encrypted credentials, Bangla/English templates with school overrides, delivery log per recipient and channel, queued delivery with per-school rate limit, retries and manual retry, SMS part counting and plan quota
+- ✅ Absence alerts and result publication use the pipeline (email and/or SMS per school); bulk messages to all guardians, a class, guardians with overdue fees (fee reminder) or staff
+- ✅ In-app notification centre (bell) for school users and portals
+- ✅ Retention and export policy: `docs/retention-policy.md`
+- ✅ 302 automated tests (33 new for this milestone)
 
 ## Milestone 8 — Hardening ⬜
 Isolation review, authorization review, load test, query tuning, backup/restore
 drill, pilot onboarding, production deployment guide.
 
-## Known limitations after Milestone 6
+## Known limitations after Milestone 7
 - No online gateway adapter is installed: bKash, Nagad, Rocket and SSLCommerz need merchant credentials and current official documentation (open question 4). Mobile-banking payments are recorded manually with their transaction ID.
 - No advance/credit balance: a payment cannot exceed what is owed. An online payment that arrives after the invoice was settled in cash stays partly unallocated and is flagged for a manual refund.
 - Reversal/refund is for a whole payment; partial refunds are not supported. Refunding an online payment through the gateway is manual.
 - Discounts and plan changes apply to invoices generated afterwards; issued invoices are corrected with waiver/charge lines.
 - No expense ledger or accounting exports (chart of accounts, journal) yet.
-- Fee reminders by SMS/email arrive with the notification channels in Milestone 7.
 - Exams: grading fixtures are illustrative, not yet approved by a pilot school (see open question 2).
 - Report cards are printed from the browser; there is no server-generated PDF file or bulk ZIP download yet.
 - One optional (4th) subject counts per student; a student with several optional papers has the best one counted and the rest reported as non-GPA. There is no per-student subject choice record yet; "not taking" is entered per mark sheet (exempt).
 - No combined/annual result across several exams (e.g. 30% half-yearly + 70% annual) yet.
 - Students cannot submit homework through the portal yet (they see it, its attachment and their grade); teachers record submission status.
-- Absence alerts are email only. SMS needs the provider abstraction in Milestone 7.
 - Attendance is per day or per routine period; there is no hourly/biometric import.
 - Timetable has no substitute-teacher workflow or printable PDF yet.
 - Imports cover students (with one guardian per row). Staff and guardian-only imports are not built yet.
@@ -136,12 +142,27 @@ drill, pilot onboarding, production deployment guide.
 - Bangla validation messages cover the common rules only; others fall back to English.
 - Marketing, pricing and registration pages are placeholders.
 - Website: no custom domains yet (each site lives on its school subdomain), no visual page builder (Markdown editor), two templates, no contact form (phone, email and map are shown instead).
-- Portal logins need an email address for the invitation; phone-only (SMS OTP) logins wait for the SMS provider in Milestone 7.
+- Portal logins need an email address for the invitation; phone-only (SMS OTP) logins are not built yet.
 - Online payment in the portal appears only once a real gateway adapter is installed (none ship; see open question 4).
-- Notices are not pushed by SMS/email yet; they appear on the website and in the portals.
-- No plans/subscriptions yet: school status is changed manually by platform admins.
+- Notices are not pushed by SMS/email automatically; send them from Messages if needed.
+- No SMS gateway adapter ships: SSL Wireless, BulkSMSBD, Alpha SMS etc. need the provider's current documentation and a sandbox account (open question 4). The built-in "log" provider records that a message would be sent and is for development/demo only.
+- Platform payments are recorded manually by billing staff (full invoice amount only); there is no online payment of platform invoices and no tax/VAT calculation yet.
+- Plan changes take effect immediately with a new subscription (no proration); the old subscription's unpaid invoices are voided.
+- Storage usage is measured from the school's files and cached for an hour.
+- The platform area has no in-app notification bell yet; platform staff see new tickets on the dashboard and support list.
+- Permanent deletion of an archived school is a manual platform operation (see retention policy).
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.
+
+## Test coverage (Milestone 7 additions)
+| Area | File |
+|---|---|
+| Trial → invoice → active; unpaid → grace → suspension (school blocked, data kept) → payment reactivates from today; full-amount and single payment; cancel at period end; expiry; replacing a plan voids unpaid invoices; manual suspension not undone by billing; `billing:run` | `tests/Feature/Billing/SubscriptionLifecycleTest.php` |
+| Unmanaged school unlimited; student/staff limits on every path, request fields cannot raise limits; switches gate website, portal invites, import, online payments; plan change applies at once and removes portal access; school host has no plan routes | `tests/Feature/Billing/EntitlementsTest.php` |
+| Acceptance flow (create plan, assign, suspend, reactivate, pay, history); plan validation; platform role limits; school sees only its own subscription/invoices; banner only for billing viewers | `tests/Feature/Billing/PlatformBillingScreensTest.php` |
+| Tickets (school only sees its own, internal notes hidden, notifications); access requested/approved/rejected/revoked; snapshot only for the requesting agent while active, audited on both sides, expires; request validation and roles | `tests/Feature/Support/SupportTest.php` |
+| Phone normalisation and SMS parts; templates per language with overrides; class message by SMS+email logged and delivered; plan SMS quota; SMS requires plan and provider; retry/permanent failure/no double send; per-school rate limiter; encrypted write-only credentials; permissions and isolation; fee reminders; notification centre | `tests/Feature/Messaging/MessagingTest.php` |
+| Full export ZIP (UTF-8 BOM, Bangla, no ID numbers, formulas neutralised), expiry, admin-only and own school only | `tests/Feature/Exports/SchoolDataExportTest.php` |
 
 ## Test coverage (Milestone 6 additions)
 | Area | File |

@@ -9,8 +9,10 @@ schools.
 3 (academic operations: teacher assignments, timetable, calendar, attendance, homework)
 4 (examinations: configurable grading, marks entry, versioned results, bilingual
 report cards), 5 (fees: invoices, payments, receipts, reversals, reports, online
-payment architecture) and 6 (public school websites, parent/student portals, teacher
-dashboard, notices) complete. See
+payment architecture), 6 (public school websites, parent/student portals, teacher
+dashboard, notices) and 7 (SaaS plans and limits, subscriptions and platform
+billing, support tickets and audited support access, SMS/email messaging,
+data export) complete. See
 [`docs/roadmap.md`](docs/roadmap.md) for what is built and what comes next.
 
 ## Stack
@@ -19,6 +21,7 @@ MySQL 8 · Redis + Horizon · Spatie Permission (teams) · Fortify · Recharts �
 
 ## Documentation
 - [Architecture and tenancy design](docs/architecture.md)
+- [Data retention and export policy](docs/retention-policy.md)
 - [Data dictionary](docs/data-dictionary.md)
 - [Review of the baseline SQL schema](docs/schema-review.md)
 - [Roadmap, checklist and known limitations](docs/roadmap.md)
@@ -51,6 +54,8 @@ then `php artisan serve` and open, for example, `http://dhaka-model.schoolsaas.t
 | Where | Email |
 |---|---|
 | `admin.schoolsaas.test/platform/login` | `owner@schoolsaas.test` |
+| `admin.schoolsaas.test/platform/login` (billing) | `billing-support@schoolsaas.test` |
+| `admin.schoolsaas.test/platform/login` (support) | `support-agent@schoolsaas.test` |
 | `dhaka-model.schoolsaas.test/login` | `principal@dhaka-model.test` |
 | `dhaka-model.schoolsaas.test/login` (class teacher of 6-A, Math for Class 6) | `salma@dhaka-model.test` |
 | `dhaka-model.schoolsaas.test/login` (Accountant) | `accounts@dhaka-model.test` |
@@ -64,7 +69,9 @@ with class-teacher and subject assignments, a Sunday–Thursday timetable, two h
 one homework, a published Half-Yearly exam for Class 6 (results and report cards), a
 draft Annual exam, fee plans with September–November invoices and payments (one family
 overdue with late fees), a published bilingual website (pages, notices for each
-audience, events, a generated photo album), parent and student portal logins, and one admission application. A pending school registration waits in the platform admin.
+audience, events, a generated photo album), parent and student portal logins, three demo plans (Dhaka Model on Standard, monthly, first invoice paid;
+Chattogram Alia Madrasa on a Starter trial), a support ticket with a reply,
+SMS in test mode with one sent message, and one admission application. A pending school registration waits in the platform admin.
 The public website is at `dhaka-model.schoolsaas.test` (add `?lang=en` for English) and the admission form at `/admission`.
 
 ### Useful commands
@@ -74,8 +81,8 @@ php artisan platform:create-admin --name="..." --email="..."
 php artisan tenancy:sync-permissions   # after adding permissions/roles in TenantPermissions
 php artisan test                 # runs against the school_saas_test MySQL database
 npm run types:check
-php artisan horizon              # queue workers (Redis): imports and emails need a worker
-php artisan schedule:work        # local scheduler: late fees (daily), payment reconciliation (15 min)
+php artisan horizon              # queue workers (Redis): imports, emails, SMS and exports need a worker (queues: default, messages)
+php artisan schedule:work        # local scheduler: late fees and billing:run (daily), payment reconciliation (15 min)
 ```
 
 ## Production notes

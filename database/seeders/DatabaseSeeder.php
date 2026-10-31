@@ -50,6 +50,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $tenant->run($dhaka, fn (School $school) => $this->seedDhaka($school));
+        $this->seedBilling($dhaka, $tenant);
 
         SchoolRegistration::create([
             'institution_name' => 'Sylhet Ideal Kindergarten', 'institution_name_bn' => 'সিলেট আইডিয়াল কিন্ডারগার্টেন',
@@ -330,5 +331,62 @@ class DatabaseSeeder extends Seeder
 
         $students['Tanvir Hasan']->update(['email' => 'student@dhaka-model.test']);
         $accounts->inviteStudent($students['Tanvir Hasan']->fresh())->forceFill(['password' => 'password', 'status' => 'active', 'email_verified_at' => now()])->save();
+    }
+
+    /** Milestone 7: plans, subscriptions, invoices, a support ticket, messaging. */
+    private function seedBilling(School $dhaka, TenantContext $tenant): void
+    {
+        config(['queue.default' => 'sync']); // demo messages are delivered at once (log provider)
+
+        foreach (['billing_support' => 'Billing Desk', 'support_agent' => 'Support Agent'] as $role => $name) {
+            $user = new PlatformUser(['name' => $name, 'email' => str_replace('_', '-', $role).'@'.config('tenancy.domain'), 'password' => 'password']);
+            $user->role = PlatformRole::from($role);
+            $user->email_verified_at = now();
+            $user->save();
+        }
+
+        $plan = function (string $code, string $name, string $bn, string $monthly, string $yearly, array $features, int $order) {
+            $p = \App\Modules\Billing\Models\Plan::create(['code' => $code, 'name' => $name, 'name_bn' => $bn, 'price_monthly' => $monthly, 'price_yearly' => $yearly,
+                'trial_days' => 30, 'grace_days' => 10, 'sort_order' => $order, 'description' => 'Demo plan — prices are placeholders.']);
+            foreach ($features as $key => $value) {
+                \App\Modules\Billing\Models\PlanFeature::create(['plan_id' => $p->id, 'feature_key' => $key, 'feature_value' => $value]);
+            }
+
+            return $p;
+        };
+        $starter = $plan('starter', 'Starter', 'স্টার্টার', '1500.00', '15000.00', ['students' => 300, 'staff' => 30, 'sms_per_month' => 500, 'storage_mb' => 1024,
+            'website' => true, 'parent_portal' => true, 'student_portal' => false, 'online_payments' => false, 'sms' => true, 'bulk_import' => true], 1);
+        $standard = $plan('standard', 'Standard', 'স্ট্যান্ডার্ড', '3500.00', '35000.00', ['students' => 1500, 'staff' => 120, 'sms_per_month' => 3000, 'storage_mb' => 10240,
+            'website' => true, 'parent_portal' => true, 'student_portal' => true, 'online_payments' => true, 'sms' => true, 'bulk_import' => true], 2);
+        $plan('campus', 'Campus', 'ক্যাম্পাস', '9000.00', '90000.00', ['students' => null, 'staff' => null, 'sms_per_month' => 15000, 'storage_mb' => 51200,
+            'website' => true, 'parent_portal' => true, 'student_portal' => true, 'online_payments' => true, 'sms' => true, 'bulk_import' => true], 3);
+
+        $billing = app(\App\Modules\Billing\Services\SubscriptionService::class);
+        $sub = $billing->assign($dhaka, $standard, 'monthly', start: \Carbon\CarbonImmutable::parse('2026-10-15 00:00', 'Asia/Dhaka')->utc());
+        $first = $sub->invoices()->sole();
+        $billing->recordPayment($first, ['amount' => $first->total, 'method' => 'bank', 'transaction_id' => 'DEMO-DBBL-7781', 'received_at' => \Carbon\CarbonImmutable::parse('2026-10-16 11:00', 'Asia/Dhaka')->utc()]);
+        $billing->tick(); // nothing due yet: the renewal invoice comes 7 days before 15 November
+
+        $ctg = School::query()->where('slug', 'ctg-madrasa')->firstOrFail();
+        $billing->assign($ctg, $starter, 'yearly', trial: true);
+
+        $tenant->run($dhaka, function (School $school) {
+            $owner = \App\Models\User::query()->where('email', 'principal@dhaka-model.test')->firstOrFail();
+            $support = app(\App\Modules\Support\Services\SupportService::class);
+            $ticket = $support->open($school, $owner, ['subject' => 'How do we add a second campus?', 'category' => 'technical', 'priority' => 'normal',
+                'message' => 'We are opening a branch in Uttara next year. Can both campuses use one account?']);
+            $agent = PlatformUser::query()->where('role', 'support_agent')->firstOrFail();
+            $support->replyFromPlatform($ticket, $agent, "Yes. Add it under Campuses; classes and staff can be assigned per campus. We can walk you through it on a call.", false);
+
+            \App\Modules\Messaging\Models\SmsProviderAccount::create(['provider' => 'log', 'sender_id' => 'DHAKAMODEL', 'is_enabled' => true]);
+            $settings = app(\App\Modules\Setup\Services\SchoolSettings::class);
+            $settings->put('messaging.channels.attendance.absent', ['sms', 'mail']);
+            $settings->put('messaging.channels.results.published', ['sms', 'mail']);
+
+            $messages = app(\App\Modules\Messaging\Services\MessageService::class);
+            $recipients = \App\Modules\People\Models\Guardian::query()->get()->map(fn ($g) => ['name' => $g->full_name, 'phone' => $g->phone, 'email' => $g->email,
+                'data' => ['message' => 'আগামীকাল বিজয় দিবসের অনুষ্ঠান সকাল ৯টায় শুরু হবে।']])->all();
+            $messages->send('general', $recipients, ['sms', 'mail'], $owner);
+        });
     }
 }
