@@ -130,6 +130,7 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ Production deployment guide (`docs/deployment.md`) with nginx (wildcard subdomains + wildcard TLS), php-fpm, Horizon supervisor, cron, `scripts/deploy.sh` and a go-live checklist
 - ✅ Shared hosting support (cPanel + Cloudflare): runs without Redis (database sessions, cache, locks and queue), queue worker started by cron, `TRUSTED_PROXIES=cloudflare`, `ops:preflight` installation check, upload-ready release zip (`scripts/build-release.sh`), `scripts/cpanel-update.sh` with rollback, and a step-by-step guide (`docs/install-cpanel.md`) — rehearsed on Apache + per-user PHP-FPM with Redis stopped
 - ✅ Queue `retry_after` raised above the longest job (30 min export) so a running import/export is never picked up twice
+- ✅ 324 automated tests (22 new for this milestone)
 
 ## Known limitations after Milestone 8
 - No online gateway adapter is installed: bKash, Nagad, Rocket and SSLCommerz need merchant credentials and current official documentation (open question 4). Mobile-banking payments are recorded manually with their transaction ID.
