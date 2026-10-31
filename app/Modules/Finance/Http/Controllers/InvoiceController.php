@@ -43,7 +43,7 @@ class InvoiceController extends Controller
         $invoices = FeeInvoice::query()
             ->with(['student:id,school_id,full_name,admission_no', 'schoolClass:id,school_id,name', 'section:id,school_id,name'])
             ->when($f['status'] ?? null, fn ($q, $s) => match ($s) {
-                'overdue' => $q->open()->whereDate('due_date', '<', $today),
+                'overdue' => $q->open()->where('due_date', '<', $today),
                 'open' => $q->open(),
                 default => $q->where('status', $s),
             })

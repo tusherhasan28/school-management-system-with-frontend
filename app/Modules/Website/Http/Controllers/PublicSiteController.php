@@ -41,7 +41,7 @@ class PublicSiteController extends Controller
         return view('site.home', [
             'site' => $site,
             'notices' => Notice::query()->visibleTo([])->newestFirst()->limit(5)->get(),
-            'events' => Event::query()->where('is_public', true)->whereDate('starts_on', '>=', now($site->school->timezone)->toDateString())->orderBy('starts_on')->limit(3)->get(),
+            'events' => Event::query()->where('is_public', true)->where('starts_on', '>=', now($site->school->timezone)->toDateString())->orderBy('starts_on')->limit(3)->get(),
             'photos' => GalleryPhoto::query()->whereHas('album', fn ($q) => $q->where('is_public', true))->latest('id')->limit(8)->get(),
             'seo' => ['title' => null, 'description' => $site->settings->local('seo_description') ?? Markdown::excerpt($site->settings->local('about'))],
         ]);
@@ -116,8 +116,8 @@ class PublicSiteController extends Controller
             $public = Event::query()->where('is_public', true);
 
             return [
-                'upcoming' => (clone $public)->where(fn ($q) => $q->whereDate('starts_on', '>=', $today)->orWhereDate('ends_on', '>=', $today))->orderBy('starts_on')->get(),
-                'past' => (clone $public)->whereDate('starts_on', '<', $today)->where(fn ($q) => $q->whereNull('ends_on')->orWhereDate('ends_on', '<', $today))->orderByDesc('starts_on')->limit(12)->get(),
+                'upcoming' => (clone $public)->where(fn ($q) => $q->where('starts_on', '>=', $today)->orWhere('ends_on', '>=', $today))->orderBy('starts_on')->get(),
+                'past' => (clone $public)->where('starts_on', '<', $today)->where(fn ($q) => $q->whereNull('ends_on')->orWhere('ends_on', '<', $today))->orderByDesc('starts_on')->limit(12)->get(),
                 'seo' => ['title' => __('Events'), 'description' => null],
             ];
         });

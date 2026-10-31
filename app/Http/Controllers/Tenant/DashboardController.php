@@ -68,7 +68,7 @@ class DashboardController extends Controller
     private function attendanceToday(SchoolCalendar $calendar): array
     {
         $today = $calendar->today();
-        $sessions = AttendanceSession::query()->whereDate('attendance_date', $today->toDateString())->where('period_key', 'daily');
+        $sessions = AttendanceSession::query()->where('attendance_date', $today->toDateString())->where('period_key', 'daily');
 
         $marks = StudentAttendance::query()
             ->whereIn('attendance_session_id', (clone $sessions)->select('id'))

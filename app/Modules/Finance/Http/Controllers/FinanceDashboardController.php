@@ -28,15 +28,18 @@ class FinanceDashboardController extends Controller
         $collected = fn (CarbonImmutable $from) => Money::format(Money::sum($live()->where('received_at', '>=', $from->utc())->pluck('amount')));
 
         $open = FeeInvoice::query()->open();
+        // Balances summed in SQL in paisa (exact integers), not row by row in PHP.
+        $balance = fn ($q) => (int) $q->sum(\Illuminate\Support\Facades\DB::raw('ROUND(total * 100) - ROUND(paid_total * 100)'));
+        $overdue = (clone $open)->where('due_date', '<', $now->toDateString());
         $term = trim((string) $request->query('q', ''));
 
         return Inertia::render('app/fees/dashboard', [
             'stats' => [
                 'today' => $collected($now->startOfDay()),
                 'month' => $collected($now->startOfMonth()),
-                'outstanding' => Money::format(Money::sum((clone $open)->pluck('total')) - Money::sum((clone $open)->pluck('paid_total'))),
-                'overdue' => Money::format(Money::sum((clone $open)->whereDate('due_date', '<', $now->toDateString())->get()->map(fn ($i) => Money::format($i->balance())))),
-                'overdue_count' => (clone $open)->whereDate('due_date', '<', $now->toDateString())->count(),
+                'outstanding' => Money::format($balance(clone $open)),
+                'overdue' => Money::format($balance(clone $overdue)),
+                'overdue_count' => (clone $overdue)->count(),
                 'pending_online' => FeePayment::query()->where('status', 'pending')->whereNotNull('gateway')->count(),
             ],
             'recent' => $live()->with(['student:id,school_id,full_name,admission_no', 'receiver:id,school_id,name'])->orderByDesc('received_at')->limit(8)->get()->map(fn ($p) => $this->present->payment($p)),

@@ -185,7 +185,7 @@ class BillingService
     {
         $count = 0;
 
-        FeeInvoice::query()->open()->whereDate('due_date', '<', $today->toDateString())->orderBy('id')->chunkById(200, function ($invoices) use ($today, &$count) {
+        FeeInvoice::query()->open()->where('due_date', '<', $today->toDateString())->orderBy('id')->chunkById(200, function ($invoices) use ($today, &$count) {
             foreach ($invoices as $invoice) {
                 $count += (int) $this->applyLateFee($invoice, $today);
             }
@@ -219,8 +219,8 @@ class BillingService
         $start = CarbonImmutable::parse($period.'-01');
 
         return AcademicSession::query()
-            ->whereDate('start_date', '<=', $start->endOfMonth()->toDateString())
-            ->whereDate('end_date', '>=', $start->toDateString())
+            ->where('start_date', '<=', $start->endOfMonth()->toDateString())
+            ->where('end_date', '>=', $start->toDateString())
             ->orderByDesc('is_current')
             ->first();
     }

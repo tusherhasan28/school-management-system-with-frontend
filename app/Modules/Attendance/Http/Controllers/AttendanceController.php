@@ -53,7 +53,7 @@ class AttendanceController extends Controller
 
         $sessions = AttendanceSession::query()
             ->withCount(['marks', 'marks as absent_count' => fn ($q) => $q->where('status', 'absent')])
-            ->whereDate('attendance_date', $date->toDateString())
+            ->where('attendance_date', $date->toDateString())
             ->whereIn('section_id', $sections->pluck('id'))
             ->get()
             ->groupBy('period_key');

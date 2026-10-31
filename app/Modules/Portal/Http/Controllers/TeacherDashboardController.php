@@ -73,7 +73,7 @@ class TeacherDashboardController extends Controller
             })
             ->orderBy('class_id')->orderBy('name')
             ->get();
-        $taken = AttendanceSession::query()->whereIn('section_id', $sections->pluck('id'))->whereDate('attendance_date', $today->toDateString())->where('period_key', 'daily')->get()->keyBy('section_id');
+        $taken = AttendanceSession::query()->whereIn('section_id', $sections->pluck('id'))->where('attendance_date', $today->toDateString())->where('period_key', 'daily')->get()->keyBy('section_id');
 
         $homework = Homework::query()
             ->with(['subject:id,school_id,name,name_bn', 'schoolClass:id,school_id,name', 'section:id,school_id,name'])

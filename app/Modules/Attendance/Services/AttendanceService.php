@@ -54,7 +54,7 @@ class AttendanceService
             ->where('academic_session_id', $session->id)
             ->where('section_id', $section->id)
             ->where('status', 'enrolled')
-            ->whereDate('enrolled_at', '<=', $date->toDateString())
+            ->where('enrolled_at', '<=', $date->toDateString())
             ->orderByRaw('CAST(roll_no AS UNSIGNED), roll_no')
             ->get();
     }
@@ -62,8 +62,8 @@ class AttendanceService
     public function sessionFor(CarbonImmutable $date): ?AcademicSession
     {
         return AcademicSession::query()
-            ->whereDate('start_date', '<=', $date->toDateString())
-            ->whereDate('end_date', '>=', $date->toDateString())
+            ->where('start_date', '<=', $date->toDateString())
+            ->where('end_date', '>=', $date->toDateString())
             ->orderByDesc('is_current')
             ->first();
     }
@@ -72,7 +72,7 @@ class AttendanceService
     {
         return AttendanceSession::query()
             ->where('section_id', $section->id)
-            ->whereDate('attendance_date', $date->toDateString())
+            ->where('attendance_date', $date->toDateString())
             ->where('period_key', $this->periodKey($routine))
             ->first();
     }

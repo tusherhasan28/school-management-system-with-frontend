@@ -39,7 +39,10 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'locale' => $locale,
-            'translations' => fn () => $this->translations($locale),
+            // ~120 KB of UI strings: sent once per browser session and language, not on every visit.
+            // The key changes when the file changes, so a deploy refreshes it.
+            'translations' => \Inertia\Inertia::once(fn () => $this->translations($locale))
+                ->as('translations:'.$locale.':'.(@filemtime(lang_path($locale.'.json')) ?: 0)),
             'school' => $school ? [
                 'name' => $school->name,
                 'name_bn' => $school->name_bn,

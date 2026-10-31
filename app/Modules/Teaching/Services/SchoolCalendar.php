@@ -45,8 +45,8 @@ class SchoolCalendar
     public function holidayOn(CarbonInterface $date): ?Holiday
     {
         return Holiday::query()
-            ->whereDate('start_date', '<=', $date->toDateString())
-            ->whereDate('end_date', '>=', $date->toDateString())
+            ->where('start_date', '<=', $date->toDateString())
+            ->where('end_date', '>=', $date->toDateString())
             ->first();
     }
 
@@ -72,8 +72,8 @@ class SchoolCalendar
     public function workingDays(CarbonInterface $from, CarbonInterface $to): int
     {
         $holidays = Holiday::query()
-            ->whereDate('end_date', '>=', $from->toDateString())
-            ->whereDate('start_date', '<=', $to->toDateString())
+            ->where('end_date', '>=', $from->toDateString())
+            ->where('start_date', '<=', $to->toDateString())
             ->get(['start_date', 'end_date']);
 
         $count = 0;
