@@ -43,7 +43,11 @@ decrypt() { openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass "file:$BACKUP
 log "checking file integrity"
 ( cd "$SRC" && sha256sum --quiet -c SHA256SUMS ) || die "checksum mismatch: backup is damaged or was altered"
 
-mysql --defaults-extra-file="$DEFAULTS" -e "CREATE DATABASE IF NOT EXISTS \`$TARGET\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+EXISTS="$(mysql --defaults-extra-file="$DEFAULTS" -N -e "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = '$TARGET'")"
+if [[ "$EXISTS" == "0" ]]; then
+  mysql --defaults-extra-file="$DEFAULTS" -e "CREATE DATABASE \`$TARGET\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" \
+    || die "cannot create database $TARGET; on shared hosting create it in cPanel > MySQL Databases and give the database user ALL PRIVILEGES on it"
+fi
 TABLES="$(mysql --defaults-extra-file="$DEFAULTS" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '$TARGET'")"
 if [[ "$TABLES" != "0" && "${RESTORE_ALLOW_OVERWRITE:-0}" != "1" ]]; then
   die "database $TARGET already has $TABLES tables (set RESTORE_ALLOW_OVERWRITE=1 to replace them)"

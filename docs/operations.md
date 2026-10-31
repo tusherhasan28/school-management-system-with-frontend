@@ -42,10 +42,10 @@ php artisan up
 ```
 
 `ops:verify-restore` compares every table's row count and checksum with the
-manifest and exits non-zero on any difference. The manifest is taken a moment
-before the dump, so on a busy server a few fast-moving tables can differ;
-allow those explicitly, e.g.
-`RESTORE_VERIFY_IGNORE="--ignore=sessions --ignore=cache --ignore=cache_locks --ignore=jobs --ignore=activity_logs"`.
+manifest and exits non-zero on any difference. Sessions, cache and queue tables
+change every second and are never compared. The manifest is taken a moment
+before the dump, so on a busy server a log table can differ by a few rows;
+allow it explicitly, e.g. `RESTORE_VERIFY_IGNORE="--ignore=activity_logs"`.
 The app user needs `SELECT` on the restored database for the verification.
 
 Restoring **one school** only (e.g. a school deleted data by mistake) is not a

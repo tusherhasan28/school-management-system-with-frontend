@@ -88,6 +88,21 @@ class OpsHealthTest extends TestCase
         @unlink($file);
     }
 
+    public function test_database_queue_worker_check_catches_a_stopped_worker_cron(): void
+    {
+        config(['queue.default' => 'database']);
+        $this->assertTrue(app(HealthChecks::class)->run()['queue_worker']['ok']);
+
+        DB::table('jobs')->insert(['queue' => 'default', 'payload' => '{}', 'attempts' => 0,
+            'reserved_at' => null, 'available_at' => now()->subMinutes(2)->getTimestamp(), 'created_at' => now()->getTimestamp()]);
+        $this->assertTrue(app(HealthChecks::class)->run()['queue_worker']['ok']);
+
+        $this->travel(15)->minutes();
+        $result = app(HealthChecks::class)->run()['queue_worker'];
+        $this->assertFalse($result['ok']);
+        $this->assertStringContainsString('queue cron', $result['detail']);
+    }
+
     public function test_health_endpoint_requires_the_token_and_reports_failures(): void
     {
         $url = 'http://'.config('tenancy.admin_subdomain').'.'.config('tenancy.domain').'/ops/health';
@@ -128,5 +143,26 @@ class OpsHealthTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         DatabaseManifest::connection('bad-name; drop');
+    }
+
+    public function test_preflight_reports_unsafe_production_settings(): void
+    {
+        config(['app.debug' => true, 'app.url' => 'http://example.com', 'session.secure' => false]);
+
+        $this->artisan('ops:preflight')
+            ->expectsOutputToContain('must be false on a live server')
+            ->assertFailed();
+
+        config(['app.debug' => false, 'app.url' => 'https://example.com.bd', 'tenancy.domain' => 'example.com.bd',
+            'session.secure' => true, 'cache.default' => 'array', 'queue.default' => 'database', 'session.driver' => 'array']);
+        @mkdir(public_path('build'), 0775, true);
+        $manifest = public_path('build/manifest.json');
+        $created = ! is_file($manifest) && file_put_contents($manifest, '{}');
+
+        $this->artisan('ops:preflight')->assertSuccessful();
+
+        if ($created) {
+            unlink($manifest);
+        }
     }
 }

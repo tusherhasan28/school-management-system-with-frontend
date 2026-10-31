@@ -13,6 +13,12 @@ use Illuminate\Support\Facades\DB;
 class DatabaseManifest
 {
     /**
+     * Tables that change every second on a live site (sessions, cache and the
+     * queue when they use the database driver). Recorded, never compared.
+     */
+    public const VOLATILE = ['sessions', 'cache', 'cache_locks', 'jobs', 'job_batches'];
+
+    /**
      * Connection to $database on the same server/credentials as the default one.
      */
     public static function connection(?string $database = null): Connection
@@ -72,6 +78,7 @@ class DatabaseManifest
     public static function compare(array $expected, array $actual, array $ignore = []): array
     {
         $problems = [];
+        $ignore = array_merge($ignore, self::VOLATILE);
 
         foreach ($expected['tables'] as $table => $want) {
             if (in_array($table, $ignore, true)) {

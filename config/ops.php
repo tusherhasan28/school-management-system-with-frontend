@@ -30,6 +30,10 @@ return [
         'failed_jobs_window_minutes' => (int) env('OPS_FAILED_JOBS_WINDOW_MINUTES', 15),
         'failed_jobs_max' => (int) env('OPS_FAILED_JOBS_MAX', 0),
 
+        // Database queue (shared hosting, worker started by cron): alert when a
+        // job has been waiting longer than this, i.e. the worker cron stopped.
+        'queue_worker_max_wait_minutes' => (int) env('OPS_QUEUE_MAX_WAIT_MINUTES', 10),
+
         // Horizon must be running when the queue driver is redis.
         'horizon' => (bool) env('OPS_CHECK_HORIZON', $production),
 

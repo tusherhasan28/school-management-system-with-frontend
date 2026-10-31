@@ -65,9 +65,9 @@ automated test unless stated otherwise.
 
 ## 6. Open items (not blocking the pilot)
 
-- Two-factor login is available but not **enforced** for school owners/admins
-  or platform staff; `school:readiness` warns. Consider making it mandatory for
-  platform staff before more schools join.
+- Two-factor login is available but not **enforced** for school staff
+  (`school:readiness` warns), and the **platform admin login has no two-factor
+  option yet**. Add platform 2FA before more staff get platform accounts.
 - No external penetration test yet; recommended before scaling past the pilot.
 - No error tracker is bundled (logs only); add Sentry/Flare or log shipping.
 - Passkeys stay disabled (relying-party id would need to be per school host).

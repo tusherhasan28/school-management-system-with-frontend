@@ -1,4 +1,6 @@
-# Production deployment guide
+# Production deployment guide (VPS)
+
+On cPanel shared hosting follow [install-cpanel.md](install-cpanel.md) instead.
 
 A single Ubuntu 24.04 server is enough for the pilot (see sizing in
 `docs/performance.md`). Example files are in `deploy/`; replace
@@ -69,6 +71,7 @@ OPS_ALERT_EMAIL=ops@your-company.com
 OPS_HEALTH_TOKEN=              # openssl rand -hex 24
 BILLING_PAYMENT_INSTRUCTIONS="..."
 SECURITY_CSP_ENABLED=true
+TRUSTED_PROXIES=cloudflare      # only when the site is behind Cloudflare
 ```
 
 Do **not** set `MESSAGING_ALLOW_LOG_SMS` in production. Payment-gateway and SMS
@@ -123,7 +126,7 @@ restore the pre-deploy backup (`docs/operations.md`).
 - [ ] `APP_DEBUG=false`, `APP_ENV=production`, `SESSION_SECURE_COOKIE=true`, `SESSION_DOMAIN=null`
 - [ ] HTTPS on root, `admin.` and a school subdomain; HTTP redirects to HTTPS; `Strict-Transport-Security` present
 - [ ] `.env` not reachable over HTTP (`curl https://example.com.bd/.env` → 404)
-- [ ] Platform admin has two-factor login enabled
+- [ ] Platform admin uses a long unique password (platform 2FA is not built yet)
 - [ ] Horizon running (`supervisorctl status`), scheduler cron installed, `ops:health` all ok
 - [ ] Mail delivers (password reset to a real inbox)
 - [ ] Backup ran, copy is off-server, restore drill recorded

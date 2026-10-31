@@ -26,6 +26,34 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
+     * Behind Cloudflare or a load balancer, trust X-Forwarded-For/Proto/Port from
+     * the configured proxies only (TRUSTED_PROXIES: "cloudflare", a CIDR list or
+     * "*"), so HTTPS is detected, cookies stay secure and rate limits see the
+     * visitor's IP. X-Forwarded-Host is never trusted: the school is chosen by
+     * the real Host header.
+     */
+    private function configureTrustedProxies(): void
+    {
+        $setting = trim((string) config('security.trusted_proxies'));
+        if ($setting === '') {
+            return;
+        }
+
+        $proxies = match (strtolower($setting)) {
+            '*' => '*',
+            'cloudflare' => config('security.cloudflare_ips'),
+            default => array_values(array_filter(array_map('trim', explode(',', $setting)))),
+        };
+
+        \Illuminate\Http\Middleware\TrustProxies::at($proxies);
+        \Illuminate\Http\Middleware\TrustProxies::withHeaders(
+            \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR
+            | \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT
+            | \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO
+        );
+    }
+
+    /**
      * Bootstrap any application services.
      */
     public function boot(): void
@@ -49,7 +77,9 @@ class AppServiceProvider extends ServiceProvider
             Gate::policy($model, $policy);
         }
 
-        // SMS jobs: at most the provider's per-minute rate, per school (Redis-backed limiter).
+        $this->configureTrustedProxies();
+
+        // SMS jobs: at most the provider's per-minute rate, per school (cache-backed limiter).
         \Illuminate\Support\Facades\RateLimiter::for('messaging-sms', function (object $job) {
             $per = $job->perMinute ?? 60;
 

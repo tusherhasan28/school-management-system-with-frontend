@@ -128,7 +128,8 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ Bangla in printed PDFs verified: receipt and report card printed to PDF through Chromium embed Hind Siliguri with correct conjuncts
 - ✅ Pilot onboarding: `school:readiness <slug>` go-live checklist and `docs/pilot-onboarding.md`
 - ✅ Production deployment guide (`docs/deployment.md`) with nginx (wildcard subdomains + wildcard TLS), php-fpm, Horizon supervisor, cron, `scripts/deploy.sh` and a go-live checklist
-- ✅ 319 automated tests (17 new for this milestone)
+- ✅ Shared hosting support (cPanel + Cloudflare): runs without Redis (database sessions, cache, locks and queue), queue worker started by cron, `TRUSTED_PROXIES=cloudflare`, `ops:preflight` installation check, upload-ready release zip (`scripts/build-release.sh`), `scripts/cpanel-update.sh` with rollback, and a step-by-step guide (`docs/install-cpanel.md`) — rehearsed on Apache + per-user PHP-FPM with Redis stopped
+- ✅ Queue `retry_after` raised above the longest job (30 min export) so a running import/export is never picked up twice
 
 ## Known limitations after Milestone 8
 - No online gateway adapter is installed: bKash, Nagad, Rocket and SSLCommerz need merchant credentials and current official documentation (open question 4). Mobile-banking payments are recorded manually with their transaction ID.
@@ -162,7 +163,7 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - Permanent deletion of an archived school is a manual platform operation (see retention policy).
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
 - Restore drill and load test were run in the development sandbox; repeat both on the production server before the first pilot school goes live (checklist in `docs/deployment.md`).
-- Two-factor login is optional for school admins and platform staff (`school:readiness` warns); no external penetration test yet; no error tracker bundled.
+- Two-factor login is optional for school staff (`school:readiness` warns) and not available for the platform admin login yet; no external penetration test yet; no error tracker bundled.
 - Restoring a single school from a backup is a careful manual procedure, not a button (`docs/operations.md`).
 - `composer audit` could only use cached package metadata in the sandbox; re-run it on a normal network.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.
@@ -178,6 +179,8 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 | Query counts flat as data grows on 9 busy screens | `tests/Feature/Performance/QueryScalingTest.php` |
 | Health checks, throttled alert and recovery mails, scheduler/backup age, token-protected endpoint, restore manifest verification | `tests/Feature/Ops/OpsHealthTest.php` |
 | Go-live readiness checklist; counts only, no personal data | `tests/Feature/Ops/SchoolReadinessTest.php` |
+| Database-queue worker check, installation preflight | `tests/Feature/Ops/OpsHealthTest.php` |
+| Forwarded headers trusted only from configured proxies (Cloudflare list), never the host | `tests/Feature/Security/TrustedProxiesTest.php` |
 
 ## Test coverage (Milestone 7 additions)
 | Area | File |

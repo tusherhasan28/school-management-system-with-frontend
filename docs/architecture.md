@@ -238,6 +238,7 @@ every environment. Guest redirects choose the login page by host, not path.
 - **Health** (`App\Support\Ops\HealthChecks`): shared by `ops:health --alert` (scheduled every 5 min, emails `OPS_ALERT_EMAIL`, once per cooldown per check, plus recovery) and `GET admin.APP_DOMAIN/ops/health` (token, no session, 503 on failure). The scheduler writes a heartbeat every minute so a dead scheduler is caught from outside.
 - **Backups** (`scripts/backup.sh`, `scripts/restore.sh`): mysqldump + storage archive, encrypted with a passphrase file, `SHA256SUMS`, and `manifest.json` (row count + `CHECKSUM TABLE` per table) checked by `ops:verify-restore` after every restore.
 - **Isolation as tests**: new tables, models or routes fail `IsolationAuditTest` until classified; new id-taking routes are swept automatically by `CrossTenantSweepTest` (add a fixture to `CreatesFullTenantDataset`).
+- **Two hosting modes**: VPS (Redis sessions/cache/queue + Horizon) or shared hosting (database drivers, `queue:work --stop-when-empty` from cron). Nothing in the code needs Redis; `ops:preflight` checks whichever is configured. Forwarded headers are trusted only from `TRUSTED_PROXIES` and never for the host, since the host picks the school.
 - **Performance guards**: `QueryScalingTest` fails on N+1; translations are an Inertia `once` prop keyed by language and file version.
 
 ## 5. Audit and logging

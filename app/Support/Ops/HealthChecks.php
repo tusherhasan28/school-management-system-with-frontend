@@ -32,6 +32,9 @@ class HealthChecks
             'disk' => fn () => $this->disk(),
         ];
 
+        if (config('queue.default') === 'database') {
+            $checks['queue_worker'] = fn () => $this->databaseQueueWorker();
+        }
         if (config('ops.checks.horizon') && config('queue.default') === 'redis') {
             $checks['horizon'] = fn () => $this->horizon();
         }
@@ -110,6 +113,26 @@ class HealthChecks
         return [
             'ok' => $count <= $max,
             'detail' => "{$count} failed in the last {$window} min",
+        ];
+    }
+
+    private function databaseQueueWorker(): array
+    {
+        $oldest = DB::table(config('queue.connections.database.table', 'jobs'))
+            ->whereNull('reserved_at')
+            ->where('available_at', '<=', now()->getTimestamp())
+            ->min('available_at');
+
+        if ($oldest === null) {
+            return ['ok' => true, 'detail' => 'no jobs waiting'];
+        }
+
+        $minutes = (int) floor((now()->getTimestamp() - (int) $oldest) / 60);
+        $max = (int) config('ops.checks.queue_worker_max_wait_minutes');
+
+        return [
+            'ok' => $minutes <= $max,
+            'detail' => $minutes <= $max ? "oldest job waiting {$minutes} min" : "oldest job waiting {$minutes} min — is the queue cron running?",
         ];
     }
 
