@@ -30,6 +30,10 @@ class EnsurePortalArea
 
         abort_unless($allowed, 403);
 
+        // The school's plan must include this portal (teachers are always allowed).
+        $feature = ['parent' => 'parent_portal', 'student' => 'student_portal'][$area] ?? null;
+        abort_if($feature !== null && ! app(\App\Modules\Billing\Services\Entitlements::class)->enabled($feature), 403, __('billing.portal_not_in_plan'));
+
         return $next($request);
     }
 }

@@ -97,6 +97,10 @@ class StudentImportService
             throw new RuntimeException('This import cannot be started.');
         }
 
+        $plan = app(\App\Modules\Billing\Services\Entitlements::class);
+        $plan->ensureEnabled('bulk_import');
+        $plan->ensureCanAdd('students', $job->valid_rows);
+
         $job->status = 'queued';
         $job->save();
 

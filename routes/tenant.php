@@ -32,6 +32,7 @@ use App\Modules\Portal\Http\Controllers\ParentPortalController;
 use App\Modules\Portal\Http\Controllers\PortalAccountController;
 use App\Modules\Portal\Http\Controllers\StudentPortalController;
 use App\Modules\Portal\Http\Controllers\TeacherDashboardController;
+use App\Modules\Support\Http\Controllers\SupportController;
 use App\Modules\Website\Http\Controllers\PublicSiteController;
 use App\Modules\Website\Http\Controllers\WebsiteAdminController;
 use App\Modules\Teaching\Http\Controllers\AssignmentController;
@@ -90,6 +91,11 @@ Route::get('home', HomeController::class)->middleware(['auth:web', 'active'])->n
 Route::middleware(['auth:web', 'active', 'verified', 'portal:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::get('dashboard', TeacherDashboardController::class)->name('dashboard');
     Route::get('notices/{notice}/attachment', [TeacherDashboardController::class, 'noticeAttachment'])->whereNumber('notice')->name('notices.attachment');
+});
+
+Route::middleware(['auth:web', 'active'])->group(function () {
+    Route::get('notifications', [\App\Modules\Messaging\Http\Controllers\NotificationCenterController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/read', [\App\Modules\Messaging\Http\Controllers\NotificationCenterController::class, 'read'])->name('notifications.read');
 });
 
 Route::get('portal/checkout', \App\Modules\Portal\Http\Controllers\CheckoutController::class)->middleware(['auth:web', 'active'])->name('portal.checkout');
@@ -323,6 +329,19 @@ Route::middleware(['auth:web', 'active', 'verified', 'staff'])->prefix('app')->g
     Route::post('events', [NoticeController::class, 'saveEvent'])->name('events.store');
     Route::put('events/{event}', [NoticeController::class, 'saveEvent'])->name('events.update');
     Route::delete('events/{event}', [NoticeController::class, 'destroyEvent'])->name('events.destroy');
+
+    // Milestone 7: support, subscription, messaging
+    Route::get('subscription', [\App\Modules\Billing\Http\Controllers\SchoolSubscriptionController::class, 'show'])->name('subscription.show');
+    Route::get('subscription/invoices/{invoice}', [\App\Modules\Billing\Http\Controllers\SchoolSubscriptionController::class, 'invoice'])->whereNumber('invoice')->name('subscription.invoice');
+    Route::controller(SupportController::class)->prefix('support')->name('support.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->middleware('throttle:10,1')->name('store');
+        Route::get('{ticket}', 'show')->whereNumber('ticket')->name('show');
+        Route::post('{ticket}/reply', 'reply')->whereNumber('ticket')->middleware('throttle:30,1')->name('reply');
+        Route::post('{ticket}/close', 'close')->whereNumber('ticket')->name('close');
+        Route::post('access/{grant}/decide', 'decide')->whereNumber('grant')->name('access.decide');
+        Route::post('access/{grant}/revoke', 'revoke')->whereNumber('grant')->name('access.revoke');
+    });
 });
 
 require __DIR__.'/settings.php';

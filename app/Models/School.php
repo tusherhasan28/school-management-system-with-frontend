@@ -46,6 +46,12 @@ class School extends Model
         ];
     }
 
+    /** @return HasMany<\App\Modules\Billing\Models\Subscription, $this> */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Billing\Models\Subscription::class);
+    }
+
     /**
      * @return HasMany<SchoolDomain, $this>
      */

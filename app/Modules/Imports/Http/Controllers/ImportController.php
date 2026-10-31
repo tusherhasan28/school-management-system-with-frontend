@@ -36,6 +36,7 @@ class ImportController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $this->authorize('create', DataImportJob::class);
+        app(\App\Modules\Billing\Services\Entitlements::class)->ensureEnabled('bulk_import');
 
         $data = $request->validate([
             'file' => ['required', 'file', 'max:5120', 'mimes:csv,txt,xlsx'],

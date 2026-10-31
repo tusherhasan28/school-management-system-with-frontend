@@ -67,8 +67,14 @@ class WebsiteAdminController extends Controller
 
         $rules['seo_description'] = $rules['seo_description_bn'] = ['nullable', 'string', 'max:320'];
 
+        $data = $request->validate($rules);
+
+        if (! empty($data['is_published'])) {
+            app(\App\Modules\Billing\Services\Entitlements::class)->ensureEnabled('website');
+        }
+
         $settings = WebsiteSetting::current();
-        $settings->fill($request->validate($rules))->save();
+        $settings->fill($data)->save();
         $this->audit->tenant('website.settings_updated', $settings, [], ['is_published' => $settings->is_published, 'template' => $settings->template]);
         Inertia::flash('toast', ['type' => 'success', 'message' => __('website.saved')]);
 

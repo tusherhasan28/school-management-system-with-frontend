@@ -181,7 +181,7 @@ class PublicSiteController extends Controller
     {
         $site = $this->site($request);
 
-        if (! $site->settings->is_published) {
+        if (! $this->live($site)) {
             return response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>', 200, ['Content-Type' => 'application/xml']);
         }
 
@@ -207,7 +207,7 @@ class PublicSiteController extends Controller
     public function robots(Request $request): Response
     {
         $site = $this->site($request);
-        $body = $site->settings->is_published
+        $body = $this->live($site)
             ? "User-agent: *\nDisallow: /app/\nDisallow: /parent/\nDisallow: /student/\nDisallow: /teacher/\nDisallow: /settings/\nDisallow: /payments/\n\nSitemap: ".url('sitemap.xml')."\n"
             : "User-agent: *\nDisallow: /\n";
 
@@ -234,9 +234,15 @@ class PublicSiteController extends Controller
     }
 
     /** Unpublished sites are visible only to staff who manage the website (preview). */
+    /** Published by the school and included in its plan. */
+    private function live(SiteContext $site): bool
+    {
+        return $site->settings->is_published && app(\App\Modules\Billing\Services\Entitlements::class)->enabled('website');
+    }
+
     private function visible(SiteContext $site, Request $request): bool
     {
-        return $site->settings->is_published || (bool) $request->user()?->can('website.manage');
+        return $this->live($site) || (bool) $request->user()?->can('website.manage');
     }
 
     private function guardVisible(Request $request): void

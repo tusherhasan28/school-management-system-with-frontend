@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 // Finance (Milestone 5)
 Schedule::command('finance:run late-fees')->dailyAt('01:30')->timezone('Asia/Dhaka')->withoutOverlapping()->onOneServer();
 Schedule::command('finance:run reconcile')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('billing:run')->dailyAt('02:15')->timezone('Asia/Dhaka')->withoutOverlapping()->onOneServer();

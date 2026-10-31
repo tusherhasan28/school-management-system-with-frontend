@@ -37,6 +37,10 @@ class OnlinePaymentService
     /** Enabled gateways for the current school, as [key => label]. */
     public function available(): array
     {
+        if (! app(\App\Modules\Billing\Services\Entitlements::class)->enabled('online_payments')) {
+            return [];
+        }
+
         $enabled = PaymentGatewayAccount::query()->where('is_enabled', true)->pluck('gateway')->all();
 
         return collect($this->gateways->all())->filter(fn ($g, $key) => in_array($key, $enabled, true))->map->label()->all();
@@ -45,7 +49,7 @@ class OnlinePaymentService
     /** @return array{0: PaymentGateway, 1: PaymentGatewayAccount} */
     public function resolve(string $key): array
     {
-        $gateway = $this->gateways->get($key);
+        $gateway = app(\App\Modules\Billing\Services\Entitlements::class)->enabled('online_payments') ? $this->gateways->get($key) : null;
         $account = $gateway ? PaymentGatewayAccount::query()->where('gateway', $key)->where('is_enabled', true)->first() : null;
 
         if ($gateway === null || $account === null) {

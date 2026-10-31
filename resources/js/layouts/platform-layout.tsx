@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { Inbox, LayoutGrid, LogOut, School } from 'lucide-react';
+import { CreditCard, Inbox, Layers, LayoutGrid, LifeBuoy, LogOut, Receipt, School } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
@@ -16,8 +16,12 @@ import {
 } from '@/components/ui/sidebar';
 import { useT } from '@/lib/i18n';
 import { dashboard, logout } from '@/routes/platform';
+import { index as invoices } from '@/routes/platform/invoices';
+import { index as plans } from '@/routes/platform/plans';
 import { index as registrations } from '@/routes/platform/registrations';
 import { index as schools } from '@/routes/platform/schools';
+import { index as subscriptions } from '@/routes/platform/subscriptions';
+import { index as support } from '@/routes/platform/support';
 import type { BreadcrumbItem } from '@/types';
 
 export default function PlatformLayout({
@@ -29,6 +33,7 @@ export default function PlatformLayout({
 }) {
     const t = useT();
     const { auth } = usePage().props;
+    const can = (ability: string) => (auth.platformUser?.abilities ?? []).some((a) => a === '*' || a === ability);
 
     return (
         <AppShell variant="sidebar">
@@ -61,6 +66,12 @@ export default function PlatformLayout({
                             { title: t('Dashboard'), href: dashboard(), icon: LayoutGrid },
                             { title: t('Schools'), href: schools(), icon: School },
                             { title: t('Registrations'), href: registrations(), icon: Inbox },
+                            ...(can('billing.view') ? [
+                                { title: t('Plans'), href: plans(), icon: Layers },
+                                { title: t('Subscriptions'), href: subscriptions(), icon: CreditCard },
+                                { title: t('Invoices'), href: invoices(), icon: Receipt },
+                            ] : []),
+                            ...(can('support.view') ? [{ title: t('Support'), href: support(), icon: LifeBuoy }] : []),
                         ]}
                     />
                 </SidebarContent>

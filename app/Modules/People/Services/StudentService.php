@@ -35,6 +35,10 @@ class StudentService
             throw ValidationException::withMessages(['guardians' => __('people.guardian_required')]);
         }
 
+        // Plan limit: checked on the server for every path that creates a student
+        // (admin form, admission conversion, import rows).
+        app(\App\Modules\Billing\Services\Entitlements::class)->ensureCanAdd('students');
+
         return DB::transaction(function () use ($student, $guardians, $enrollment) {
             $admissionNo = $student['admission_no'] ?? null;
             unset($student['admission_no']);

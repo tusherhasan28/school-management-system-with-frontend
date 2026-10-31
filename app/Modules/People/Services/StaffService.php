@@ -25,6 +25,8 @@ class StaffService
      */
     public function create(array $data, ?string $loginRole = null): StaffMember
     {
+        app(\App\Modules\Billing\Services\Entitlements::class)->ensureCanAdd('staff');
+
         return DB::transaction(function () use ($data, $loginRole) {
             $data['employee_no'] = ($data['employee_no'] ?? null) ?: $this->sequence->format('employee_no', 'EMP-{seq:4}');
             $staff = StaffMember::create($data);

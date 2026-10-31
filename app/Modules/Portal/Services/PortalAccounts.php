@@ -29,6 +29,8 @@ class PortalAccounts
     /** Create (or re-send, or re-enable) the guardian's parent login. */
     public function inviteGuardian(Guardian $guardian): User
     {
+        app(\App\Modules\Billing\Services\Entitlements::class)->ensureEnabled('parent_portal');
+
         if ($guardian->user_id) {
             return $this->reactivate($guardian, 'Parent');
         }
@@ -63,6 +65,8 @@ class PortalAccounts
     /** Create (or re-send, or re-enable) the student's own login. */
     public function inviteStudent(Student $student): User
     {
+        app(\App\Modules\Billing\Services\Entitlements::class)->ensureEnabled('student_portal');
+
         if ($student->user_id) {
             return $this->reactivate($student, 'Student');
         }

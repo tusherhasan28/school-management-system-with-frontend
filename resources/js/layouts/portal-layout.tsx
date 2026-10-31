@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { NotificationBell } from '@/components/messaging/notification-bell';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import { useT } from '@/lib/i18n';
@@ -59,6 +60,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
                             </select>
                         </label>
                     )}
+                    <NotificationBell />
                     <DropdownMenu>
                         <DropdownMenuTrigger className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label={t('Account')}>
                             <Avatar className="size-8">

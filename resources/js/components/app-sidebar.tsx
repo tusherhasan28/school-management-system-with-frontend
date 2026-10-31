@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Award, Banknote, BookOpen, Globe, Megaphone, Building2, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, FilePen, FileUp, GraduationCap, LayoutGrid, ListChecks, Sun, NotebookPen, Settings2, UserCog, UserRound, Users } from 'lucide-react';
+import { Award, Banknote, BookOpen, Globe, Megaphone, Building2, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, FilePen, FileUp, GraduationCap, LayoutGrid, LifeBuoy, ListChecks, Sun, CreditCard, NotebookPen, Settings2, UserCog, UserRound, Users } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -25,6 +25,8 @@ import { index as homework } from '@/routes/homework';
 import { index as marks } from '@/routes/marks';
 import { index as notices } from '@/routes/notices';
 import { dashboard as teacherDashboard } from '@/routes/teacher';
+import { show as subscription } from '@/routes/subscription';
+import { index as support } from '@/routes/support';
 import { edit as website } from '@/routes/website';
 import { index as timetable, mine as myTimetable } from '@/routes/timetable';
 import { index as campuses } from '@/routes/campuses';
@@ -75,6 +77,8 @@ export function AppSidebar() {
         ...when('campuses.view', { title: t('Campuses'), href: campuses(), icon: Building2 }),
         ...when('imports.manage', { title: t('Import'), href: imports(), icon: FileUp }),
         ...when('settings.manage', { title: t('Setup wizard'), href: setup(), icon: ListChecks }),
+        ...when('subscription.view', { title: t('Subscription'), href: subscription(), icon: CreditCard }),
+        ...when('support.manage', { title: t('Support'), href: support(), icon: LifeBuoy }),
     ];
 
     const schoolName =

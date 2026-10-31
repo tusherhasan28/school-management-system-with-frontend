@@ -12,6 +12,7 @@ export type PlatformUser = {
     name: string;
     email: string;
     role: string;
+    abilities: string[];
 };
 
 export type Paginated<T> = {

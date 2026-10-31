@@ -1,0 +1,31 @@
+<?php
+
+return [
+    'limit_reached' => 'Your plan allows :limit :what. Ask the platform team to move the school to a larger plan.',
+    'feature_not_in_plan' => ':feature is not included in your plan.',
+    'portal_not_in_plan' => 'This portal is not included in the school\'s plan.',
+    'invalid_cycle' => 'Choose monthly or yearly billing.',
+    'plan_has_no_trial' => 'This plan has no trial period.',
+    'invoice_not_payable' => 'Only unpaid invoices can be paid.',
+    'amount_must_match' => 'The payment must be the full invoice amount (:total).',
+    'invoice_not_voidable' => 'Only unpaid invoices can be voided.',
+    'not_suspended' => 'This subscription is not suspended.',
+    'not_trialing' => 'Only a trial can be extended.',
+    'plan_in_use' => 'This plan has subscriptions; deactivate it instead.',
+    'saved' => 'Saved.',
+    'assigned' => 'Subscription saved.',
+    'payment_recorded' => 'Payment recorded.',
+    'invoice_issued' => 'Invoice issued.',
+    'feature' => [
+        'students' => 'active students',
+        'staff' => 'teachers and staff',
+        'sms_per_month' => 'SMS per month',
+        'storage_mb' => 'MB of file storage',
+        'website' => 'The public website',
+        'parent_portal' => 'The parent portal',
+        'student_portal' => 'The student portal',
+        'online_payments' => 'Online fee payment',
+        'sms' => 'SMS messaging',
+        'bulk_import' => 'Bulk import',
+    ],
+];

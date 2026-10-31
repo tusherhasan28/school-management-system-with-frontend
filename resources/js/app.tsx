@@ -21,6 +21,7 @@ void createInertiaApp({
             case name === 'app/exams/report-cards':
             case name === 'app/fees/receipt':
             case name === 'app/fees/invoice-print':
+            case name === 'app/subscription/invoice':
             case name.startsWith('tenant/public/'):
                 return null;
             case name === 'portal/student':

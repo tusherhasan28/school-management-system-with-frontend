@@ -5,6 +5,12 @@ namespace App\Http\Controllers\Platform;
 use App\Enums\SchoolStatus;
 use App\Http\Controllers\Controller;
 use App\Models\School;
+use App\Modules\Billing\Models\Plan;
+use App\Modules\Billing\Models\PlatformInvoice;
+use App\Modules\Billing\Models\Subscription;
+use App\Modules\Billing\Services\BillingPresenter;
+use App\Modules\Billing\Services\UsageMeter;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -50,9 +56,11 @@ class SchoolController extends Controller
         ]);
     }
 
-    public function show(School $school): Response
+    public function show(Request $request, School $school, BillingPresenter $present, TenantContext $tenant): Response
     {
         $school->load('primaryDomain');
+        $subscription = Subscription::currentFor($school->id);
+        $canBilling = $request->user('platform')->can('billing.view');
 
         return Inertia::render('platform/schools/show', [
             'school' => $this->present($school) + [
@@ -62,6 +70,19 @@ class SchoolController extends Controller
                 'suspension_reason' => $school->suspension_reason,
                 'suspended_at' => $school->suspended_at?->toIso8601String(),
             ],
+            'billing' => $canBilling ? [
+                'subscription' => $present->subscription($subscription),
+                'history' => Subscription::query()->with('plan')->where('school_id', $school->id)->whereNotIn('status', Subscription::LIVE)->latest('id')->limit(10)->get()
+                    ->map(fn ($s) => $present->subscription($s)),
+                'invoices' => PlatformInvoice::query()->where('school_id', $school->id)->orderByDesc('issued_at')->orderByDesc('id')->limit(24)->get()
+                    ->map(fn ($i) => $present->invoice($i)),
+                'plans' => Plan::query()->where('is_active', true)->ordered()->get()->map(fn ($p) => $present->plan($p)),
+                // Aggregate counts only (no tenant records): what the plan limits are measured against.
+                'usage' => $tenant->run($school, fn () => app(UsageMeter::class)->all()),
+                'limits' => $subscription?->plan?->featureValues(),
+            ] : null,
+            'can' => ['manage' => $request->user('platform')->can('schools.manage'), 'billing' => $request->user('platform')->can('billing.manage'),
+                'support' => $request->user('platform')->can('support.manage')],
         ]);
     }
 

@@ -1,19 +1,20 @@
 import { Head, usePage } from '@inertiajs/react';
-import { Clock, PauseCircle, School, Sparkles } from 'lucide-react';
+import { AlertTriangle, Banknote, Clock, LifeBuoy, PauseCircle, School, Sparkles } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '@/components/shared/empty-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatCard } from '@/components/shared/stat-card';
-import { formatDateTime, useT } from '@/lib/i18n';
+import { formatDateTime, formatMoney, useT } from '@/lib/i18n';
 import { dashboard } from '@/routes/platform';
 
 type Props = {
     stats: { schools: number; active: number; suspended: number; pending: number };
     byStatus: { status: string; label: string; total: number }[];
     recentActivity: { id: number; action: string; school_id: number | null; created_at: string | null }[];
+    billing: { mrr: string; trialing: number; past_due: number; overdue_total: string; unmanaged: number; open_tickets: number };
 };
 
-export default function PlatformDashboard({ stats, byStatus, recentActivity }: Props) {
+export default function PlatformDashboard({ stats, byStatus, recentActivity, billing }: Props) {
     const t = useT();
     const { locale } = usePage().props;
 
@@ -23,13 +24,19 @@ export default function PlatformDashboard({ stats, byStatus, recentActivity }: P
             <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     title={t('Platform dashboard')}
-                    description={t('Schools across the platform. Billing and usage arrive in Milestone 7.')}
+                    description={t('Schools, subscriptions and support across the platform.')}
                 />
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <StatCard label={t('Schools')} value={stats.schools} icon={School} />
                     <StatCard label={t('Active or in trial')} value={stats.active} icon={Sparkles} tone="success" />
                     <StatCard label={t('Pending approval')} value={stats.pending} icon={Clock} tone="warning" />
                     <StatCard label={t('Suspended')} value={stats.suspended} icon={PauseCircle} tone="danger" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <StatCard label={t('Monthly recurring revenue')} value={formatMoney(billing.mrr, 'en')} icon={Banknote} hint={t(':count schools in trial', { count: String(billing.trialing) })} />
+                    <StatCard label={t('Past due')} value={billing.past_due} icon={AlertTriangle} tone={billing.past_due ? 'danger' : 'default'} hint={`${t('Overdue')}: ${formatMoney(billing.overdue_total, 'en')}`} />
+                    <StatCard label={t('Without subscription')} value={billing.unmanaged} icon={School} tone={billing.unmanaged ? 'warning' : 'default'} hint={t('Not limited and not billed')} />
+                    <StatCard label={t('Open support tickets')} value={billing.open_tickets} icon={LifeBuoy} />
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-5">

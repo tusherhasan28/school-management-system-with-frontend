@@ -1,6 +1,8 @@
-import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import SchoolStatusController from '@/actions/App/Http/Controllers/Platform/SchoolStatusController';
+import type { SchoolBilling } from '@/components/billing/school-billing';
+import { SchoolBillingPanel } from '@/components/billing/school-billing';
 import InputError from '@/components/input-error';
 import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -20,12 +22,13 @@ type Props = {
         suspension_reason: string | null;
         suspended_at: string | null;
     };
+    billing: SchoolBilling | null;
+    can: { manage: boolean; billing: boolean; support: boolean };
 };
 
-export default function SchoolShow({ school }: Props) {
+export default function SchoolShow({ school, billing, can }: Props) {
     const t = useT();
-    const { auth } = usePage().props;
-    const canManage = ['owner', 'administrator'].includes(auth.platformUser?.role ?? '');
+    const canManage = can.manage;
     const suspended = school.status === 'suspended';
 
     const details: [string, string | null][] = [
@@ -98,6 +101,7 @@ export default function SchoolShow({ school }: Props) {
                         </section>
                     )}
                 </div>
+                {billing && <SchoolBillingPanel schoolId={school.id} billing={billing} canManage={can.billing} />}
             </div>
         </>
     );

@@ -71,10 +71,33 @@ class HandleInertiaRequests extends Middleware
                     'name' => $platformUser->name,
                     'email' => $platformUser->email,
                     'role' => $platformUser->role->value,
+                    'abilities' => $platformUser->role->abilities(),
                 ] : null,
             ],
+            // Billing notice for the people who can act on it (trial ending, payment overdue, cancelling).
+            'subscriptionNotice' => $user ? fn () => $this->subscriptionNotice($user) : null,
+            // Unread in-app notifications (count only; the list loads on demand).
+            'unreadNotifications' => $user ? fn () => $user->unreadNotifications()->count() : 0,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /** @return array{status: string, date: string|null}|null */
+    private function subscriptionNotice(\App\Models\User $user): ?array
+    {
+        if (! $user->can('subscription.view')) {
+            return null;
+        }
+
+        $sub = \App\Modules\Billing\Models\Subscription::currentFor(app(TenantContext::class)->require()->id);
+
+        return match (true) {
+            $sub === null => null,
+            $sub->status === 'past_due' => ['status' => 'past_due', 'date' => $sub->grace_ends_at?->toIso8601String()],
+            $sub->status === 'trialing' && $sub->current_period_end->lte(now()->addDays(7)) => ['status' => 'trial_ending', 'date' => $sub->current_period_end->toIso8601String()],
+            $sub->cancel_at_period_end => ['status' => 'cancelling', 'date' => $sub->current_period_end->toIso8601String()],
+            default => null,
+        };
     }
 
     /**
