@@ -52,7 +52,7 @@ final class TenantPermissions
                 'admissions.manage', 'assignments.manage', 'timetable.view', 'timetable.manage', 'calendar.manage',
                 'attendance.mark', 'attendance.correct', 'attendance.view_all', 'homework.view_all',
                 'exams.manage', 'marks.verify', 'results.view', 'results.approve', 'results.publish', 'notices.manage',
-                'fees.view', 'fees.refund', 'fees.reports',
+                'fees.view', 'fees.refund', 'fees.reports', 'website.manage',
             ],
             'Exam Controller' => [
                 'dashboard.view', 'academics.view', 'students.view', 'timetable.view',

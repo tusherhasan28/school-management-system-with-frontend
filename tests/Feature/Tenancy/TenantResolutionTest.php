@@ -32,10 +32,7 @@ class TenantResolutionTest extends TestCase
 
         $this->get('http://alpha.schoolsaas.test/')
             ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('tenant/public/home')
-                ->where('school.name', 'Alpha School')
-                ->missing('school.id'));
+            ->assertSee('Alpha School');
     }
 
     public function test_host_matching_is_case_insensitive(): void

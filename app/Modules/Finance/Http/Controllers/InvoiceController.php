@@ -7,6 +7,7 @@ use App\Modules\Academics\Services\AcademicOptions;
 use App\Modules\Finance\Models\FeeCategory;
 use App\Modules\Finance\Models\FeeInvoice;
 use App\Modules\Finance\Services\BillingService;
+use App\Modules\Finance\Services\FinanceDocuments;
 use App\Modules\Finance\Services\FinancePresenter;
 use App\Modules\Finance\Services\FinanceSettings;
 use App\Modules\People\Models\Student;
@@ -151,21 +152,11 @@ class InvoiceController extends Controller
         return back();
     }
 
-    public function print(Request $request, FeeInvoice $invoice): Response
+    public function print(Request $request, FeeInvoice $invoice, FinanceDocuments $documents): Response
     {
         abort_unless($request->user()->can('fees.view'), 403);
-        $invoice->load(['student' => fn ($q) => $q->select(['id', 'school_id', 'full_name', 'name_bn', 'admission_no'])->with(['guardians' => fn ($q) => $q->wherePivot('is_primary', true)]),
-            'schoolClass:id,school_id,name', 'section:id,school_id,name', 'items']);
-        $school = $this->tenant->require();
 
-        return Inertia::render('app/fees/invoice-print', [
-            'school' => $school->only(['name', 'name_bn', 'address', 'phone', 'email']),
-            'invoice' => $this->present->invoice($invoice, $this->today()->toDateString()) + [
-                'student_bn' => $invoice->student?->name_bn, 'guardian' => $invoice->student?->guardians->first()?->full_name,
-                'items' => $invoice->items->map->only(['kind', 'description', 'amount', 'discount_amount', 'discount_note', 'line_total'])->values(),
-            ],
-            'note' => app(FinanceSettings::class)->get('receipt_note'),
-        ]);
+        return Inertia::render('app/fees/invoice-print', $documents->invoice($invoice));
     }
 
     private function today(): CarbonImmutable

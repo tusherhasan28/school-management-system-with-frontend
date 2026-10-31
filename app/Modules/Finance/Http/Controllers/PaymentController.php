@@ -4,8 +4,8 @@ namespace App\Modules\Finance\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Finance\Models\FeePayment;
+use App\Modules\Finance\Services\FinanceDocuments;
 use App\Modules\Finance\Services\FinancePresenter;
-use App\Modules\Finance\Services\FinanceSettings;
 use App\Modules\Finance\Services\PaymentService;
 use App\Modules\People\Models\Student;
 use App\Support\Money\Money;
@@ -102,26 +102,11 @@ class PaymentController extends Controller
         return back();
     }
 
-    public function receipt(Request $request, FeePayment $payment, FinanceSettings $settings): Response
+    public function receipt(Request $request, FeePayment $payment, FinanceDocuments $documents): Response
     {
         abort_unless($request->user()->can('fees.view') || $request->user()->can('fees.collect'), 403);
         abort_unless($payment->status === 'successful', 404);
-        $payment->load(['student' => fn ($q) => $q->select(['id', 'school_id', 'full_name', 'name_bn', 'admission_no']), 'receiver:id,school_id,name', 'reversal',
-            'allocations.invoice' => fn ($q) => $q->with('items')]);
-        $enrollment = $payment->student?->enrollments()->with(['schoolClass:id,school_id,name', 'section:id,school_id,name'])->latest('id')->first();
 
-        return Inertia::render('app/fees/receipt', [
-            'school' => $this->tenant->require()->only(['name', 'name_bn', 'address', 'phone', 'email']),
-            'payment' => $this->present->payment($payment) + [
-                'student_bn' => $payment->student?->name_bn, 'class' => $enrollment?->schoolClass?->name, 'section' => $enrollment?->section?->name, 'roll' => $enrollment?->roll_no,
-                'notes' => $payment->notes,
-                'allocations' => $payment->allocations->map(fn ($a) => [
-                    'invoice_no' => $a->invoice?->invoice_no, 'period' => $a->invoice?->billing_period, 'amount' => $a->amount,
-                    'items' => $a->invoice?->items->map->only(['description', 'line_total'])->values(),
-                    'balance_now' => $a->invoice ? Money::format($a->invoice->balance()) : null,
-                ]),
-            ],
-            'note' => $settings->get('receipt_note'),
-        ]);
+        return Inertia::render('app/fees/receipt', $documents->receipt($payment));
     }
 }

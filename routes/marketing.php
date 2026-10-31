@@ -16,3 +16,5 @@ Route::post('/register-school', [RegisterSchoolController::class, 'store'])->mid
 Route::get('/register-school/check-slug', [RegisterSchoolController::class, 'checkSlug'])->middleware('throttle:30,1')->name('marketing.register-school.check');
 // "Find your school" login.
 Route::inertia('/login', 'marketing/find-school')->name('marketing.login');
+
+Route::get('robots.txt', fn () => response("User-agent: *\nDisallow:\n", 200, ['Content-Type' => 'text/plain']))->name('marketing.robots');

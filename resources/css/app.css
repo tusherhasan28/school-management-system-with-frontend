@@ -152,3 +152,21 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Public website: typography for Markdown rendered from pages, notices and events. */
+@layer components {
+    .prose-site { @apply text-[17px] leading-relaxed text-zinc-700; }
+    .prose-site > * + * { @apply mt-4; }
+    .prose-site h1, .prose-site h2 { @apply mt-8 text-2xl font-bold text-zinc-900; }
+    .prose-site h3, .prose-site h4 { @apply mt-6 text-xl font-semibold text-zinc-900; }
+    .prose-site a { @apply font-medium text-[var(--site)] underline underline-offset-2; }
+    .prose-site ul { @apply list-disc pl-6; }
+    .prose-site ol { @apply list-decimal pl-6; }
+    .prose-site li + li { @apply mt-1; }
+    .prose-site blockquote { @apply border-l-4 border-[var(--site)]/40 pl-4 text-zinc-600 italic; }
+    .prose-site table { @apply w-full border-collapse text-left text-[15px]; }
+    .prose-site th, .prose-site td { @apply border border-zinc-200 px-3 py-2; }
+    .prose-site th { @apply bg-zinc-50 font-semibold; }
+    .prose-site hr { @apply my-8 border-zinc-200; }
+    .prose-site strong { @apply font-semibold text-zinc-900; }
+}

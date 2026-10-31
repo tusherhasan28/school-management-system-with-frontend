@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Tenant\DashboardController;
 use App\Http\Controllers\Tenant\InvitationController;
-use App\Http\Controllers\Tenant\PublicHomeController;
 use App\Modules\Academics\Http\Controllers\AcademicsController;
 use App\Modules\Academics\Http\Controllers\ClassSubjectController;
 use App\Modules\Admissions\Http\Controllers\AdmissionController;
@@ -27,6 +26,9 @@ use App\Modules\Finance\Http\Controllers\InvoiceController;
 use App\Modules\Finance\Http\Controllers\PaymentController;
 use App\Modules\Finance\Http\Controllers\StudentFeeController;
 use App\Modules\Setup\Http\Controllers\SetupController;
+use App\Modules\Notices\Http\Controllers\NoticeController;
+use App\Modules\Website\Http\Controllers\PublicSiteController;
+use App\Modules\Website\Http\Controllers\WebsiteAdminController;
 use App\Modules\Teaching\Http\Controllers\AssignmentController;
 use App\Modules\Teaching\Http\Controllers\CalendarController;
 use App\Modules\Teaching\Http\Controllers\TimetableController;
@@ -43,7 +45,24 @@ use Illuminate\Support\Facades\Route;
 |   /settings/*                                 personal account settings
 */
 
-Route::get('/', PublicHomeController::class)->name('home');
+// Public website (server-rendered Blade; public data only).
+Route::controller(PublicSiteController::class)->group(function () {
+    Route::get('/', 'home')->name('home');
+    Route::get('about', 'about')->name('site.about');
+    Route::get('academics', 'academics')->name('site.academics');
+    Route::get('teachers', 'teachers')->name('site.teachers');
+    Route::get('notices', 'notices')->name('site.notices');
+    Route::get('notices/{notice}', 'notice')->whereNumber('notice')->name('site.notice');
+    Route::get('notices/{notice}/attachment', 'noticeAttachment')->whereNumber('notice')->name('site.notice.attachment');
+    Route::get('events', 'events')->name('site.events');
+    Route::get('gallery', 'gallery')->name('site.gallery');
+    Route::get('gallery/{album}', 'album')->whereNumber('album')->name('site.album');
+    Route::get('contact', 'contact')->name('site.contact');
+    Route::get('p/{slug}', 'customPage')->where('slug', '[a-z0-9\-]+')->name('site.page');
+    Route::get('media/{path}', 'media')->where('path', '.+')->name('site.media');
+    Route::get('sitemap.xml', 'sitemap')->name('site.sitemap');
+    Route::get('robots.txt', 'robots')->name('site.robots');
+});
 Route::get('admission', [PublicAdmissionController::class, 'create'])->name('public.admission');
 Route::post('admission', [PublicAdmissionController::class, 'store'])->middleware('throttle:public-forms')->name('public.admission.store');
 
@@ -219,6 +238,44 @@ Route::middleware(['auth:web', 'active', 'verified'])->prefix('app')->group(func
         Route::get('reports', [FinanceReportController::class, 'index'])->name('reports');
         Route::get('reports/{report}/export', [FinanceReportController::class, 'export'])->name('reports.export');
     });
+
+    // Milestone 6: website builder, notices and events
+    Route::prefix('website')->name('website.')->controller(WebsiteAdminController::class)->group(function () {
+        Route::get('/', 'edit')->name('edit');
+        Route::put('/', 'update')->name('update');
+        Route::post('images/{slot}', 'uploadImage')->whereIn('slot', ['logo', 'hero', 'principal'])->name('images.upload');
+        Route::delete('images/{slot}', 'removeImage')->whereIn('slot', ['logo', 'hero', 'principal'])->name('images.remove');
+        Route::put('teachers', 'teachers')->name('teachers');
+        Route::get('pages', 'pages')->name('pages');
+        Route::get('pages/create', 'editPage')->name('pages.create');
+        Route::post('pages', 'savePage')->name('pages.store');
+        Route::get('pages/{page}', 'editPage')->name('pages.edit');
+        Route::put('pages/{page}', 'savePage')->name('pages.update');
+        Route::delete('pages/{page}', 'destroyPage')->name('pages.destroy');
+        Route::get('menu', 'menu')->name('menu');
+        Route::post('menu', 'storeMenuItem')->name('menu.store');
+        Route::put('menu/{item}', 'updateMenuItem')->name('menu.update');
+        Route::delete('menu/{item}', 'destroyMenuItem')->name('menu.destroy');
+        Route::get('gallery', 'gallery')->name('gallery');
+        Route::post('albums', 'storeAlbum')->name('albums.store');
+        Route::get('albums/{album}', 'album')->name('albums.show');
+        Route::put('albums/{album}', 'updateAlbum')->name('albums.update');
+        Route::delete('albums/{album}', 'destroyAlbum')->name('albums.destroy');
+        Route::post('albums/{album}/photos', 'uploadPhotos')->middleware('throttle:30,1')->name('albums.photos');
+        Route::put('photos/{photo}', 'updatePhoto')->name('photos.update');
+        Route::delete('photos/{photo}', 'destroyPhoto')->name('photos.destroy');
+    });
+
+    Route::get('notices', [NoticeController::class, 'index'])->name('notices.index');
+    Route::get('notices/create', [NoticeController::class, 'create'])->name('notices.create');
+    Route::post('notices', [NoticeController::class, 'store'])->name('notices.store');
+    Route::get('notices/{notice}/edit', [NoticeController::class, 'edit'])->name('notices.edit');
+    Route::post('notices/{notice}', [NoticeController::class, 'update'])->name('notices.update'); // POST: multipart
+    Route::delete('notices/{notice}', [NoticeController::class, 'destroy'])->name('notices.destroy');
+    Route::get('notices/{notice}/attachment', [NoticeController::class, 'attachment'])->name('notices.attachment');
+    Route::post('events', [NoticeController::class, 'saveEvent'])->name('events.store');
+    Route::put('events/{event}', [NoticeController::class, 'saveEvent'])->name('events.update');
+    Route::delete('events/{event}', [NoticeController::class, 'destroyEvent'])->name('events.destroy');
 });
 
 require __DIR__.'/settings.php';
