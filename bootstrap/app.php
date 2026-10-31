@@ -68,6 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn (Request $request) => $isAdminHost($request) ? route('platform.dashboard') : route('portal.home'));
 
         $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
@@ -77,4 +78,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Never flash these back to forms after a validation error (and so never into session storage).
+        $exceptions->dontFlash([
+            'current_password', 'password', 'password_confirmation',
+            'national_id', 'birth_registration_no', 'credentials', 'api_key', 'secret', 'token',
+        ]);
     })->create();

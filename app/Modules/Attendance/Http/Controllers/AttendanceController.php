@@ -93,6 +93,7 @@ class AttendanceController extends Controller
 
     public function take(Request $request): Response
     {
+        $this->ensureAttendanceRole($request); // refuse before validating anything
         $data = $request->validate([
             'section' => ['required', 'integer'],
             'date' => ['nullable', 'date_format:Y-m-d'],
@@ -143,6 +144,7 @@ class AttendanceController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->ensureAttendanceRole($request); // refuse before validating anything
         $data = $request->validate([
             'section_id' => ['required', 'integer', TenantRule::exists('sections')],
             'date' => ['required', 'date_format:Y-m-d'],
@@ -189,6 +191,7 @@ class AttendanceController extends Controller
 
     public function report(Request $request): Response
     {
+        $this->ensureAttendanceRole($request); // refuse before validating anything
         $data = $request->validate([
             'section' => ['required', 'integer'],
             'month' => ['nullable', 'date_format:Y-m'],
@@ -231,5 +234,12 @@ class AttendanceController extends Controller
             $session->isFinalized() => 'finalized',
             default => 'draft',
         };
+    }
+
+    /** Coarse check first; the section/period checks follow once the input is known. */
+    private function ensureAttendanceRole(Request $request): void
+    {
+        $user = $request->user();
+        abort_unless($user->can('attendance.mark') || $user->can('attendance.view_all') || $user->can('attendance.correct'), 403);
     }
 }

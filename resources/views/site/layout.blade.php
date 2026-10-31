@@ -28,7 +28,7 @@
     @if ($image)<meta property="og:image" content="{{ $image }}">@endif
     <meta name="theme-color" content="{{ $s->theme_color }}">
     @if ($site->logoUrl())<link rel="icon" href="{{ $site->logoUrl() }}">@else<link rel="icon" href="/favicon.ico" sizes="any">@endif
-    <script type="application/ld+json">{!! json_encode(array_filter([
+    <script type="application/ld+json" nonce="{{ Vite::cspNonce() }}">{!! json_encode(array_filter([
         '@context' => 'https://schema.org', '@type' => 'School', 'name' => $site->school->name, 'alternateName' => $site->school->name_bn,
         'url' => url('/'), 'telephone' => $site->school->phone, 'email' => $site->school->email, 'logo' => $site->logoUrl(),
         'address' => $site->school->address ? ['@type' => 'PostalAddress', 'streetAddress' => $site->school->address, 'addressLocality' => $site->school->district, 'addressCountry' => 'BD'] : null,

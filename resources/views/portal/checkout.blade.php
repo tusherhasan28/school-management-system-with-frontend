@@ -16,6 +16,6 @@
         <p>{{ __('Redirecting to payment…') }}</p>
         <noscript><button type="submit">{{ __('Continue to payment') }}</button></noscript>
     </form>
-    <script>document.getElementById('checkout').submit();</script>
+    <script nonce="{{ Vite::cspNonce() }}">document.getElementById('checkout').submit();</script>
 </body>
 </html>

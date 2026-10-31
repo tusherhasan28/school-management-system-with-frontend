@@ -14,6 +14,10 @@ class CheckoutController extends Controller
         $checkout = $request->session()->pull('portal.checkout');
         abort_unless(is_array($checkout) && isset($checkout['url']) && str_starts_with((string) $checkout['url'], 'https://'), 404);
 
+        // Allow this one page to post to the provider's checkout origin (CSP form-action).
+        $parts = parse_url((string) $checkout['url']);
+        $request->attributes->set('csp.form-action', ['https://'.($parts['host'] ?? '').(isset($parts['port']) ? ':'.$parts['port'] : '')]);
+
         return response()->view('portal.checkout', ['url' => $checkout['url'], 'fields' => $checkout['fields'] ?? []])
             ->header('Cache-Control', 'no-store');
     }
