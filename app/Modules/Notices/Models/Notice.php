@@ -65,7 +65,7 @@ class Notice extends Model
         $query->orderByDesc('is_pinned')->orderByRaw('COALESCE(publish_at, created_at) DESC')->orderByDesc('id');
     }
 
-    public function publishedOn(): \Illuminate\Support\Carbon
+    public function publishedOn(): \Carbon\CarbonInterface
     {
         return $this->publish_at ?? $this->created_at;
     }

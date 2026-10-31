@@ -27,6 +27,11 @@ use App\Modules\Finance\Http\Controllers\PaymentController;
 use App\Modules\Finance\Http\Controllers\StudentFeeController;
 use App\Modules\Setup\Http\Controllers\SetupController;
 use App\Modules\Notices\Http\Controllers\NoticeController;
+use App\Modules\Portal\Http\Controllers\HomeController;
+use App\Modules\Portal\Http\Controllers\ParentPortalController;
+use App\Modules\Portal\Http\Controllers\PortalAccountController;
+use App\Modules\Portal\Http\Controllers\StudentPortalController;
+use App\Modules\Portal\Http\Controllers\TeacherDashboardController;
 use App\Modules\Website\Http\Controllers\PublicSiteController;
 use App\Modules\Website\Http\Controllers\WebsiteAdminController;
 use App\Modules\Teaching\Http\Controllers\AssignmentController;
@@ -78,7 +83,45 @@ Route::middleware('guest:web')->group(function () {
     Route::post('invitation/{token}', [InvitationController::class, 'store'])->middleware('throttle:6,1')->name('invitation.accept');
 });
 
-Route::middleware(['auth:web', 'active', 'verified'])->prefix('app')->group(function () {
+Route::get('home', HomeController::class)->middleware(['auth:web', 'active'])->name('portal.home');
+
+// Milestone 6: portals. Every screen resolves the student from the signed-in
+// login (PortalAccess); ids in the URL are only ever looked up through it.
+Route::middleware(['auth:web', 'active', 'verified', 'portal:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+    Route::get('dashboard', TeacherDashboardController::class)->name('dashboard');
+    Route::get('notices/{notice}/attachment', [TeacherDashboardController::class, 'noticeAttachment'])->whereNumber('notice')->name('notices.attachment');
+});
+
+Route::get('portal/checkout', \App\Modules\Portal\Http\Controllers\CheckoutController::class)->middleware(['auth:web', 'active'])->name('portal.checkout');
+
+$portalTabs = 'attendance|timetable|homework|results|fees|notices';
+
+Route::middleware(['auth:web', 'active', 'verified', 'portal:parent'])->prefix('parent')->name('parent.')->controller(ParentPortalController::class)->group(function () use ($portalTabs) {
+    Route::get('dashboard', 'dashboard')->name('dashboard');
+    Route::get('notices/{notice}/attachment', 'noticeAttachment')->whereNumber('notice')->name('notices.attachment');
+    Route::prefix('children/{student}')->whereNumber('student')->group(function () use ($portalTabs) {
+        Route::get('/', 'show')->name('child');
+        Route::get('results/{exam}', 'reportCard')->whereNumber('exam')->name('report-card');
+        Route::get('invoices/{invoice}', 'invoice')->whereNumber('invoice')->name('invoice');
+        Route::post('invoices/{invoice}/pay', 'pay')->whereNumber('invoice')->middleware('throttle:10,1')->name('pay');
+        Route::get('receipts/{payment}', 'receipt')->whereNumber('payment')->name('receipt');
+        Route::get('homework/{homework}/attachment', 'homeworkAttachment')->whereNumber('homework')->name('homework.attachment');
+        Route::get('{tab}', 'show')->where('tab', $portalTabs)->name('tab');
+    });
+});
+
+Route::middleware(['auth:web', 'active', 'verified', 'portal:student'])->prefix('student')->name('student.')->controller(StudentPortalController::class)->group(function () use ($portalTabs) {
+    Route::get('/', 'show')->name('dashboard');
+    Route::get('results/{exam}', 'reportCard')->whereNumber('exam')->name('report-card');
+    Route::get('invoices/{invoice}', 'invoice')->whereNumber('invoice')->name('invoice');
+    Route::post('invoices/{invoice}/pay', 'pay')->whereNumber('invoice')->middleware('throttle:10,1')->name('pay');
+    Route::get('receipts/{payment}', 'receipt')->whereNumber('payment')->name('receipt');
+    Route::get('homework/{homework}/attachment', 'homeworkAttachment')->whereNumber('homework')->name('homework.attachment');
+    Route::get('notices/{notice}/attachment', 'noticeAttachment')->whereNumber('notice')->name('notices.attachment');
+    Route::get('{tab}', 'show')->where('tab', $portalTabs)->name('tab');
+});
+
+Route::middleware(['auth:web', 'active', 'verified', 'staff'])->prefix('app')->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::controller(SetupController::class)->prefix('setup')->name('setup.')->group(function () {
@@ -124,6 +167,10 @@ Route::middleware(['auth:web', 'active', 'verified'])->prefix('app')->group(func
     Route::get('guardians', [GuardianController::class, 'index'])->name('guardians.index');
     Route::get('guardians/{guardian}', [GuardianController::class, 'show'])->name('guardians.show');
     Route::put('guardians/{guardian}', [GuardianController::class, 'update'])->name('guardians.update');
+    Route::post('guardians/{guardian}/portal', [PortalAccountController::class, 'inviteGuardian'])->name('guardians.portal.store');
+    Route::delete('guardians/{guardian}/portal', [PortalAccountController::class, 'disableGuardian'])->name('guardians.portal.destroy');
+    Route::post('students/{student}/portal', [PortalAccountController::class, 'inviteStudent'])->name('students.portal.store');
+    Route::delete('students/{student}/portal', [PortalAccountController::class, 'disableStudent'])->name('students.portal.destroy');
 
     Route::resource('staff', StaffController::class)->except(['show', 'destroy'])->parameters(['staff' => 'staff']);
     Route::post('staff/{staff}/login', [StaffController::class, 'createLogin'])->name('staff.login');

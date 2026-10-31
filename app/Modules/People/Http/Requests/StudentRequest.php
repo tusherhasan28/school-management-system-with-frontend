@@ -39,6 +39,7 @@ class StudentRequest extends FormRequest
             'blood_group' => ['nullable', Rule::in(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])],
             'religion' => ['nullable', 'string', 'max:60'],
             'nationality' => ['nullable', 'string', 'max:80'],
+            'email' => ['nullable', 'email', 'max:190'],
             'birth_registration_no' => ['nullable', 'digits_between:10,20'],
             'present_address' => ['nullable', 'string', 'max:1000'],
             'permanent_address' => ['nullable', 'string', 'max:1000'],

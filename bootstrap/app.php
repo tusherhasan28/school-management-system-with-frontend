@@ -55,6 +55,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'platform.host' => EnsurePlatformHost::class,
             'tenant.session' => EnsureSessionBelongsToTenant::class,
             'active' => EnsureUserIsActive::class,
+            'staff' => \App\Http\Middleware\EnsureStaffArea::class,
+            'portal' => \App\Http\Middleware\EnsurePortalArea::class,
         ]);
 
         // Decide by host, not path: everything on admin.APP_DOMAIN (including
@@ -63,7 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
             === strtolower(config('tenancy.admin_subdomain').'.'.config('tenancy.domain'));
 
         $middleware->redirectGuestsTo(fn (Request $request) => $isAdminHost($request) ? route('platform.login') : route('login'));
-        $middleware->redirectUsersTo(fn (Request $request) => $isAdminHost($request) ? route('platform.dashboard') : route('dashboard'));
+        $middleware->redirectUsersTo(fn (Request $request) => $isAdminHost($request) ? route('platform.dashboard') : route('portal.home'));
 
         $middleware->web(append: [
             HandleAppearance::class,

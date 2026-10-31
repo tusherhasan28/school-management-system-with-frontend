@@ -20,6 +20,7 @@ type Student = {
     blood_group: string | null;
     religion: string | null;
     nationality: string | null;
+    email: string | null;
     present_address: string | null;
     permanent_address: string | null;
     date_of_birth: string | null;
@@ -72,6 +73,7 @@ export default function StudentForm({ student, sessions, classes, currentSession
                                     <SelectField label={t('Gender')} name="gender" options={genders} defaultValue={student?.gender ?? 'not_specified'} required error={errors.gender} />
                                     <SelectField label={t('Blood group')} name="blood_group" placeholder="—" options={bloodGroups.map((b) => ({ value: b, label: b }))} defaultValue={student?.blood_group ?? ''} error={errors.blood_group} />
                                     <TextField label={t('Religion')} name="religion" defaultValue={student?.religion ?? ''} error={errors.religion} />
+                                    <TextField label={t('Student email')} name="email" type="email" autoComplete="off" defaultValue={student?.email ?? ''} hint={t('Needed only for a student portal login.')} error={errors.email} />
                                     <TextField
                                         label={t('Birth registration no.')}
                                         name="birth_registration_no"

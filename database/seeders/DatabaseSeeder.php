@@ -94,6 +94,8 @@ class DatabaseSeeder extends Seeder
         $this->seedOperations($session, $class6, $sectionA, $salma);
         $this->seedExams($session, $class6);
         $this->seedFees($session, $class6);
+        $this->seedWebsite($salma);
+        $this->seedPortals();
 
         app(AdmissionService::class)->submit([
             'applied_class_id' => $class6->id, 'applicant_name' => 'Imran Kabir', 'applicant_name_bn' => 'ইমরান কবির',
@@ -253,7 +255,7 @@ class DatabaseSeeder extends Seeder
         $payments = app(\App\Modules\Finance\Services\PaymentService::class);
         $pay = fn (string $name, string $amount, string $method, string $on, ?string $ref = null) => $payments->record(
             $students[$name],
-            ['amount' => $amount, 'method' => $method, 'reference' => $ref, 'received_at' => \Carbon\CarbonImmutable::parse($on.' 11:30', 'Asia/Dhaka'), 'idempotency_key' => 'seed-'.md5($name.$amount.$on)],
+            ['amount' => $amount, 'method' => $method, 'reference' => $ref, 'received_at' => \Carbon\CarbonImmutable::parse($on.' 11:30', 'Asia/Dhaka')->utc(), 'idempotency_key' => 'seed-'.md5($name.$amount.$on)],
             null,
             $accountant,
         );
@@ -266,5 +268,67 @@ class DatabaseSeeder extends Seeder
 
         // Rafiul has paid nothing: September and October are overdue and get the late fee.
         $billing->applyLateFees(\Carbon\CarbonImmutable::now('Asia/Dhaka')->startOfDay());
+    }
+
+    /** Milestone 6: a published website with notices, events and a small gallery. */
+    private function seedWebsite(\App\Modules\People\Models\StaffMember $salma): void
+    {
+        $settings = \App\Modules\Website\Models\WebsiteSetting::current();
+        $settings->fill([
+            'template' => 'classic', 'theme_color' => '#0f766e', 'default_language' => 'bn', 'is_published' => true, 'show_teachers' => true, 'eiin' => '108765',
+            'tagline' => 'Learning with care since 1998', 'tagline_bn' => '১৯৯৮ সাল থেকে যত্নের সাথে শিক্ষা',
+            'hero_title' => 'Admission for 2027 is open', 'hero_title_bn' => '২০২৭ শিক্ষাবর্ষে ভর্তি চলছে',
+            'hero_text' => 'Classes 1 to 10, Bangla and English versions.', 'hero_text_bn' => 'প্রথম থেকে দশম শ্রেণি, বাংলা ও ইংরেজি ভার্সন।',
+            'about' => "Dhaka Model School is a co-educational school in Mirpur, Dhaka.\n\n- Spacious classrooms\n- Science and ICT labs\n- Library and playground",
+            'about_bn' => "ঢাকা মডেল স্কুল মিরপুর, ঢাকার একটি সহশিক্ষা প্রতিষ্ঠান।\n\n- প্রশস্ত শ্রেণিকক্ষ\n- বিজ্ঞান ও আইসিটি ল্যাব\n- লাইব্রেরি ও খেলার মাঠ",
+            'principal_name' => 'Rahim Uddin', 'principal_name_bn' => 'রহিম উদ্দিন',
+            'principal_message' => 'We help every child grow in knowledge and character.', 'principal_message_bn' => 'আমরা প্রতিটি শিশুকে জ্ঞানে ও চরিত্রে বড় হতে সাহায্য করি।',
+            'office_hours' => 'Sunday–Thursday, 8:00 am – 3:00 pm', 'office_hours_bn' => 'রবিবার–বৃহস্পতিবার, সকাল ৮টা – বিকাল ৩টা',
+            'seo_description' => 'Dhaka Model School, Mirpur: classes 1–10, admission, notices and results.',
+        ])->save();
+        $salma->forceFill(['show_on_website' => true])->save();
+
+        \App\Modules\Website\Models\WebsitePage::create([
+            'slug' => 'uniform', 'title' => 'School uniform', 'title_bn' => 'স্কুল পোশাক', 'status' => 'published',
+            'body' => "## Boys\nWhite shirt, navy trousers.\n\n## Girls\nWhite kameez, navy salwar and orna.",
+            'body_bn' => "## ছেলে\nসাদা শার্ট, নেভি প্যান্ট।\n\n## মেয়ে\nসাদা কামিজ, নেভি সালোয়ার ও ওড়না।",
+        ])->forceFill(['published_at' => now()])->save();
+
+        $notice = fn (array $a) => \App\Modules\Notices\Models\Notice::create($a + ['status' => 'published']);
+        $notice(['title' => 'Annual exam routine published', 'title_bn' => 'বার্ষিক পরীক্ষার রুটিন প্রকাশিত', 'body' => 'The annual exam starts on **1 December**.', 'body_bn' => 'বার্ষিক পরীক্ষা **১ ডিসেম্বর** শুরু হবে।', 'audiences' => ['public'], 'is_pinned' => true]);
+        $notice(['title' => 'Parents meeting on Saturday', 'title_bn' => 'শনিবার অভিভাবক সভা', 'body' => 'Class 6 parents: 10 am in the hall.', 'body_bn' => '৬ষ্ঠ শ্রেণির অভিভাবকগণ: সকাল ১০টা, হলরুমে।', 'audiences' => ['parents']]);
+        $notice(['title' => 'Bring your science copies', 'title_bn' => 'বিজ্ঞান খাতা নিয়ে আসবে', 'body' => 'Class 6: practical copies on Monday.', 'audiences' => ['students']]);
+        $notice(['title' => 'Staff meeting', 'title_bn' => 'শিক্ষক সভা', 'body' => 'Thursday after the last period.', 'audiences' => ['staff']]);
+
+        \App\Modules\Notices\Models\Event::create(['title' => 'Victory Day programme', 'title_bn' => 'বিজয় দিবস অনুষ্ঠান', 'starts_on' => '2026-12-16', 'location' => 'School field', 'is_public' => true]);
+        \App\Modules\Notices\Models\Event::create(['title' => 'Annual sports day', 'title_bn' => 'বার্ষিক ক্রীড়া প্রতিযোগিতা', 'starts_on' => '2027-01-20', 'ends_on' => '2027-01-21', 'location' => 'School field', 'is_public' => true]);
+
+        // Generated placeholder photos (no real people), stored through the same re-encoding path as uploads.
+        $album = \App\Modules\Website\Models\GalleryAlbum::create(['title' => 'Science fair 2026', 'title_bn' => 'বিজ্ঞান মেলা ২০২৬', 'taken_on' => '2026-08-20', 'is_public' => true]);
+        $media = app(\App\Modules\Website\Services\WebsiteMedia::class);
+
+        foreach ([[15, 118, 110], [234, 179, 8], [37, 99, 235]] as $i => [$r, $g, $b]) {
+            $img = imagecreatetruecolor(1200, 800);
+            imagefill($img, 0, 0, imagecolorallocate($img, $r, $g, $b));
+            imagefilledellipse($img, 600, 400, 420, 420, imagecolorallocatealpha($img, 255, 255, 255, 80));
+            $tmp = tempnam(sys_get_temp_dir(), 'seed').'.jpg';
+            imagejpeg($img, $tmp, 85);
+            $file = new \Illuminate\Http\UploadedFile($tmp, 'photo-'.($i + 1).'.jpg', 'image/jpeg', null, true);
+            \App\Modules\Website\Models\GalleryPhoto::create(['gallery_album_id' => $album->id, 'sort_order' => $i + 1, 'caption' => 'Project '.($i + 1)] + $media->storeImage($file, 'gallery/'.$album->id));
+        }
+    }
+
+    /** Milestone 6: demo family logins (activated directly; real ones come by invitation). */
+    private function seedPortals(): void
+    {
+        $accounts = app(\App\Modules\Portal\Services\PortalAccounts::class);
+        $students = \App\Modules\People\Models\Student::query()->get()->keyBy('full_name');
+
+        $guardian = $students['Ayesha Rahman']->guardians()->firstOrFail(); // also Nusrat's father
+        $guardian->update(['email' => 'parent@dhaka-model.test']);
+        $accounts->inviteGuardian($guardian->fresh())->forceFill(['password' => 'password', 'status' => 'active', 'email_verified_at' => now()])->save();
+
+        $students['Tanvir Hasan']->update(['email' => 'student@dhaka-model.test']);
+        $accounts->inviteStudent($students['Tanvir Hasan']->fresh())->forceFill(['password' => 'password', 'status' => 'active', 'email_verified_at' => now()])->save();
     }
 }

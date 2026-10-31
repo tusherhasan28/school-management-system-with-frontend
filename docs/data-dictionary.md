@@ -332,6 +332,47 @@ stop counting towards invoice balances.
 `gateway` (unique per school), `mode` (sandbox/live), `credentials` (encrypted JSON,
 hidden from serialization), `is_enabled`.
 
+## Website, notices and portals (Milestone 6)
+
+Bilingual text is stored as `field` (English) + `field_bn` (Bangla); the page shows
+the visitor's language and falls back to the other one. Text fields are Markdown.
+
+### `website_settings`
+One row per school: `template` (classic/modern), `theme_color`, `default_language`
+(bn/en), `is_published`, `show_teachers`, `eiin`, image paths (`logo_path`,
+`hero_image_path`, `principal_photo_path`), bilingual `tagline`, `hero_title`,
+`hero_text`, `about`, `principal_name`, `principal_message`, `office_hours`,
+`seo_description`, and `facebook_url`, `youtube_url`, `map_url` (Google Maps embed only).
+
+### `website_pages`
+Custom pages: `slug` (unique per school), bilingual `title`/`body`, `seo_description`,
+`status` (draft/published), `published_at`, `updated_by`.
+
+### `website_menu_items`
+`location` (header/footer), bilingual `label`, `link_type` (builtin/page/url),
+`builtin` (home, about, academics, teachers, notices, events, gallery, admission,
+contact), `website_page_id`, `url`, `sort_order`, `is_visible`. An empty header uses
+a standard menu.
+
+### `notices`
+Bilingual `title`/`body`, `audiences` (JSON list of public/staff/parents/students),
+`is_pinned`, `publish_at`/`expires_at` (UTC), `status` (draft/published),
+`attachment_path`/`attachment_name` (private storage), `created_by`.
+
+### `events`
+Bilingual `title`/`description`, `starts_on`, `ends_on`, `starts_at`, `location`,
+`is_public` (website and portals), `created_by`.
+
+### `gallery_albums` / `gallery_photos`
+Albums: bilingual `title`, `description`, `taken_on`, `is_public`, `sort_order`.
+Photos: `gallery_album_id`, `path`, `thumb_path` (re-encoded JPEGs under
+`schools/{id}/website/`), `width`, `height`, bilingual `caption`, `sort_order`.
+
+### Columns added
+- `staff_members.show_on_website` (default false): listed on the public Teachers page.
+- `students.email`: for the student portal invitation.
+- `guardians.user_id` / `students.user_id` (from Milestone 2) now link portal logins.
+
 ## Framework tables
 `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`
 (Laravel defaults; production uses Redis for sessions, cache and queues).

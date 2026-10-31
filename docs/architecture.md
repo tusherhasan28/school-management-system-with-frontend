@@ -73,7 +73,8 @@ as school slugs (`config/tenancy.php`).
 
 | Path | Audience |
 |---|---|
-| `/`, `/about`, `/admission`, `/notices`, `/contact`, `/p/{slug}` | Public website (no auth) |
+| `/`, `/about`, `/academics`, `/teachers`, `/notices`, `/events`, `/gallery`, `/contact`, `/p/{slug}`, `/media/*`, `/sitemap.xml`, `/robots.txt`, `/admission` | Public website (no auth, Blade) |
+| `/home` | Sends a signed-in user to their area |
 | `/login`, `/logout`, `/forgot-password`, ... | Tenant authentication |
 | `/app/*` (e.g. `/app/dashboard`, `/app/students`, `/app/notices`) | School administration |
 | `/teacher/*`, `/student/*`, `/parent/*` | Portals |
@@ -176,6 +177,16 @@ administration under `/app` is the deliberate namespace that keeps both.
   routine). Records outside the scope return 403 or 404, never a filtered page that
   reveals they exist. Leadership roles bypass the scope through `attendance.view_all`
   / `homework.view_all`. Teacher roles no longer carry `students.view`.
+- **Family portals** (Milestone 6): a parent login is linked to one `guardians`
+  row, a student login to one `students` row (`user_id`). `PortalAccess` resolves
+  the student from the signed-in user: a parent's `{student}` must be one of the
+  guardian's linked children, otherwise 404 (not 403, so other ids reveal nothing);
+  the student portal takes no student id at all. Every further id in a portal URL
+  (exam, invoice, payment, homework) is looked up *through* that student. The
+  service caches nothing, so unlinking a guardian takes effect on the next request.
+  `portal:parent|student|teacher` middleware gates each area; `staff` middleware
+  redirects parent/student-only logins away from `/app`. A teacher who is also a
+  parent has one login with both roles.
 - **Support access to tenant data** (Milestone 7): a `support_access_grants` row with
   reason, expiry and approver; every access is audited.
 
@@ -225,6 +236,11 @@ every environment. Guest redirects choose the login page by host, not path.
 | Advance payments / credit | Not supported (payment ≤ amount owed) | `PaymentService::plan()` |
 | Late fees | Off until a school enables them | Fees → Setup |
 | Grading defaults | GPA 5 preset with half-up GPA rounding, 4th-subject bonus above 2.00 — editable per scale | `GradingPresets`, scale editor |
+| Public website rendering | Server-rendered Blade (indexable, works without JavaScript; no Node SSR process in production) instead of Inertia SSR | `resources/views/site` |
+| Website text format | Markdown, raw HTML escaped, unsafe links dropped | `Website\Services\Markdown` |
+| Uploaded website images | Re-encoded to JPEG with GD (EXIF/GPS removed), max 1600 px, 480 px thumbnail | `WebsiteMedia` |
+| Teachers on the public site | Nobody until the school ticks them; name and designation only | Website → Teachers |
+| Portal logins | Email invitation only (SMS OTP in M7) | `PortalAccounts` |
 | Brand accent | Deep teal `oklch(0.46 0.085 185)` | `resources/css/app.css` |
 
 ## 9. Trade-offs
@@ -235,3 +251,6 @@ every environment. Guest redirects choose the login page by host, not path.
 - Composite FKs add an index per parent table (`school_id, id`) and make migrations
   slightly more verbose; the safety is worth it.
 - Fail-closed scope means platform code must be explicit. That is intentional friction.
+- The public site is Blade while the app is React. Two template systems to maintain,
+  but crawlers get complete HTML, phones on slow connections get small pages without
+  a JavaScript bundle, and production needs no Node SSR server.

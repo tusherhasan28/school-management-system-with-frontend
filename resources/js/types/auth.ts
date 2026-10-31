@@ -16,6 +16,8 @@ export type Auth = {
     user: User;
     permissions: string[];
     isStaff: boolean;
+    area: 'staff' | 'teacher' | 'parent' | 'student' | null;
+    children: { id: number; name: string; name_bn: string | null }[];
     platformUser: PlatformUser | null;
 };
 

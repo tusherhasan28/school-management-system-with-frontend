@@ -4,6 +4,7 @@ import { useState } from 'react';
 import StudentController from '@/actions/App/Modules/People/Http/Controllers/StudentController';
 import { SelectField, TextField } from '@/components/shared/fields';
 import { PageHeader } from '@/components/shared/page-header';
+import { PortalAccess } from '@/components/shared/portal-access';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { reportCards } from '@/routes/exams';
 import { show as feeAccount } from '@/routes/fees/students';
 import { show as guardianShow } from '@/routes/guardians';
 import { edit, index } from '@/routes/students';
+import { destroy as portalDestroy, store as portalStore } from '@/routes/students/portal';
 import { relationships } from './form';
 
 type Props = {
@@ -27,6 +29,7 @@ type Props = {
         blood_group: string | null;
         religion: string | null;
         nationality: string | null;
+        email: string | null;
         present_address: string | null;
         permanent_address: string | null;
         status: string;
@@ -40,9 +43,10 @@ type Props = {
     fees: { due: string; overdue: string; open: number } | null;
     results: { exam_id: number; exam: string; published: boolean; gpa: string | null; letter_grade: string | null; status: string; percentage: string; position: number | null; class_id: number; section_id: number | null; can_print: boolean }[];
     can: { update: boolean; changeStatus: boolean; manageGuardians: boolean };
+    portal: { status: string | null } | null;
 };
 
-export default function StudentShow({ student, attendance, results, fees, can }: Props) {
+export default function StudentShow({ student, attendance, results, fees, can, portal }: Props) {
     const t = useT();
     const [linking, setLinking] = useState(false);
     const [ending, setEnding] = useState(false);
@@ -53,6 +57,7 @@ export default function StudentShow({ student, attendance, results, fees, can }:
         [t('Blood group'), student.blood_group],
         [t('Religion'), student.religion],
         [t('Nationality'), student.nationality],
+        [t('Student email'), student.email],
         [t('Birth registration no.'), student.birth_registration_no],
         [t('Admission date'), student.admission_date],
         [t('Present address'), student.present_address],
@@ -124,6 +129,10 @@ export default function StudentShow({ student, attendance, results, fees, can }:
                         </ul>
                     </section>
                 </div>
+
+                {portal && (
+                    <PortalAccess kind="student" status={portal.status} hasEmail={!!student.email} inviteUrl={portalStore(student.id).url} disableUrl={portalDestroy(student.id).url} />
+                )}
 
                 <section className="rounded-xl border border-border/70 bg-card p-5">
                     <h2 className="mb-3 font-medium">{t('Attendance this session')}</h2>

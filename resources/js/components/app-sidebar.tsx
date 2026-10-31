@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Award, Banknote, BookOpen, Globe, Megaphone, Building2, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, FilePen, FileUp, GraduationCap, LayoutGrid, ListChecks, NotebookPen, Settings2, UserCog, UserRound, Users } from 'lucide-react';
+import { Award, Banknote, BookOpen, Globe, Megaphone, Building2, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, FilePen, FileUp, GraduationCap, LayoutGrid, ListChecks, Sun, NotebookPen, Settings2, UserCog, UserRound, Users } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useT } from '@/lib/i18n';
 import { dashboard } from '@/routes';
+import { home } from '@/routes/portal';
 import { index as academics } from '@/routes/academics';
 import { index as admissions } from '@/routes/admissions';
 import { index as assignments } from '@/routes/assignments';
@@ -23,6 +24,7 @@ import { dashboard as fees } from '@/routes/fees';
 import { index as homework } from '@/routes/homework';
 import { index as marks } from '@/routes/marks';
 import { index as notices } from '@/routes/notices';
+import { dashboard as teacherDashboard } from '@/routes/teacher';
 import { edit as website } from '@/routes/website';
 import { index as timetable, mine as myTimetable } from '@/routes/timetable';
 import { index as campuses } from '@/routes/campuses';
@@ -41,7 +43,9 @@ export function AppSidebar() {
     const when = (permission: string, item: NavItem) => (can(permission) ? [item] : []);
 
     const items: NavItem[] = [
-        { title: t('Dashboard'), href: dashboard(), icon: LayoutGrid },
+        // Teachers land on their own dashboard; the school dashboard stays for those who may see it.
+        ...(auth.area === 'teacher' ? [] : [{ title: t('Dashboard'), href: dashboard(), icon: LayoutGrid }]),
+        ...(auth.isStaff ? [{ title: t('My day'), href: teacherDashboard(), icon: Sun }] : []),
         ...when('admissions.manage', { title: t('Admissions'), href: admissions(), icon: ClipboardList }),
         ...(can('fees.view') || can('fees.collect') ? [{ title: t('Fees'), href: fees(), icon: Banknote }] : []),
         ...when('notices.manage', { title: t('Notices'), href: notices(), icon: Megaphone }),
@@ -82,7 +86,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={home()}>
                                 <span className="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
                                     {(school?.name ?? 'S').charAt(0)}
                                 </span>

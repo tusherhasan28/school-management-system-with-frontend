@@ -88,10 +88,20 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ New role grants: Accountant manages and collects but cannot refund; Principal views, refunds and sees reports
 - ✅ 244 automated tests (32 new for this milestone)
 
-## Milestone 6 — Portals and public websites ⬜
-Teacher, parent (child switcher, linked children only), student portals; website
-templates, pages/menus editor, notices, gallery, admission form, SEO (server-rendered
-meta, sitemap, canonical URLs). Inertia SSR for public pages.
+## Milestone 6 — Portals and public websites ✅
+- ✅ Public school website on every school host: two templates (classic, modern), theme colour, logo/hero/principal photo, home, about, academics (classes and subjects), teachers (opt-in, name and designation only), notices, events, gallery, contact (Google Maps embed), custom pages and the existing admission form
+- ✅ Bangla and English content side by side (`field` / `field_bn`), `?lang=` switch with the school's default language, `hreflang` alternates
+- ✅ SEO: plain server-rendered Blade HTML (no SSR process to run), per-page title/description, canonical URLs, Open Graph tags, JSON-LD `School`, `sitemap.xml`, `robots.txt` (closes the site and private areas until published)
+- ✅ Website admin: settings, pages editor (draft/published, preview while signed in), header/footer menu editor, gallery albums with multi-photo upload
+- ✅ Safe content: Markdown with raw HTML escaped and unsafe links dropped; every uploaded image re-encoded with GD (EXIF/GPS stripped, resized, thumbnail); media served only from the school's own `website/` folder
+- ✅ Notices with audiences (website, staff, parents, students), pinning, scheduled publish/expiry and attachments; events (public or internal)
+- ✅ Parent portal (`/parent`): linked children only, child switcher, overview, attendance by month, timetable, homework with attachments and grades, published results and report cards, invoices/receipts, online payment start (only when a gateway is installed), notices
+- ✅ Student portal (`/student`): the same screens for the student's own record only; no route accepts a student id
+- ✅ Teacher dashboard (`/teacher/dashboard`): today's periods, daily attendance still to take, recent homework, open mark sheets, assigned classes, staff notices
+- ✅ Portal logins by invitation from the student and guardian pages (`users.manage`); re-send, turn off and on again; a teacher who is also a parent keeps one login with both roles
+- ✅ Login lands by area (`/home`): parents and students in their portal, teachers on their dashboard, others in `/app`. Parent/student-only logins are redirected out of `/app`
+- ✅ Fixed: backdated payments were stored as noon UTC instead of noon in the school's timezone
+- ✅ 269 automated tests (25 new for this milestone)
 
 ## Milestone 7 — SaaS billing and notifications ⬜
 Plans + plan features/limits (database-configured), subscriptions (trial, renewal,
@@ -103,19 +113,18 @@ provider abstraction with Bangla/English templates and delivery logs.
 Isolation review, authorization review, load test, query tuning, backup/restore
 drill, pilot onboarding, production deployment guide.
 
-## Known limitations after Milestone 5
+## Known limitations after Milestone 6
 - No online gateway adapter is installed: bKash, Nagad, Rocket and SSLCommerz need merchant credentials and current official documentation (open question 4). Mobile-banking payments are recorded manually with their transaction ID.
 - No advance/credit balance: a payment cannot exceed what is owed. An online payment that arrives after the invoice was settled in cash stays partly unallocated and is flagged for a manual refund.
 - Reversal/refund is for a whole payment; partial refunds are not supported. Refunding an online payment through the gateway is manual.
 - Discounts and plan changes apply to invoices generated afterwards; issued invoices are corrected with waiver/charge lines.
 - No expense ledger or accounting exports (chart of accounts, journal) yet.
-- Fee reminders by SMS/email arrive with the notification channels in Milestone 7; parents see invoices and pay online in the portal (Milestone 6).
+- Fee reminders by SMS/email arrive with the notification channels in Milestone 7.
 - Exams: grading fixtures are illustrative, not yet approved by a pilot school (see open question 2).
 - Report cards are printed from the browser; there is no server-generated PDF file or bulk ZIP download yet.
 - One optional (4th) subject counts per student; a student with several optional papers has the best one counted and the rest reported as non-GPA. There is no per-student subject choice record yet; "not taking" is entered per mark sheet (exempt).
 - No combined/annual result across several exams (e.g. 30% half-yearly + 70% annual) yet.
-- Students and guardians cannot view results online until the portals in Milestone 6; publication emails a summary only.
-- Students cannot submit homework themselves yet; teachers record submission status. Student/parent portals arrive in Milestone 6.
+- Students cannot submit homework through the portal yet (they see it, its attachment and their grade); teachers record submission status.
 - Absence alerts are email only. SMS needs the provider abstraction in Milestone 7.
 - Attendance is per day or per routine period; there is no hourly/biometric import.
 - Timetable has no substitute-teacher workflow or printable PDF yet.
@@ -126,9 +135,20 @@ drill, pilot onboarding, production deployment guide.
 - Starter-kit settings pages (profile, password, 2FA, appearance) are still English-only.
 - Bangla validation messages cover the common rules only; others fall back to English.
 - Marketing, pricing and registration pages are placeholders.
+- Website: no custom domains yet (each site lives on its school subdomain), no visual page builder (Markdown editor), two templates, no contact form (phone, email and map are shown instead).
+- Portal logins need an email address for the invitation; phone-only (SMS OTP) logins wait for the SMS provider in Milestone 7.
+- Online payment in the portal appears only once a real gateway adapter is installed (none ship; see open question 4).
+- Notices are not pushed by SMS/email yet; they appear on the website and in the portals.
 - No plans/subscriptions yet: school status is changed manually by platform admins.
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.
+
+## Test coverage (Milestone 6 additions)
+| Area | File |
+|---|---|
+| Login landing per area; parent sees only linked children (every tab, unknown ids, other parent); unlinking removes access; invoices/receipts/pay only through the own child; only published results and report cards; student sees only self; family logins kept out of `/app` and the teacher dashboard; disabled login signed out; homework/notice attachments follow visibility and audience; other school's students unreachable; staff invite/disable with permission check; teacher-parent single login; online payment start is pending until verified, one-time checkout hand-off | `tests/Feature/Portal/PortalAccessTest.php` |
+| Teacher dashboard shows only the teacher's own periods, sections, classes and staff notices; staff record required | `tests/Feature/Portal/TeacherDashboardTest.php` |
+| Holding page and manager preview, SEO tags, canonical/hreflang, sitemap and robots, no student/guardian/private staff data or non-public notices/events/albums on any page, teachers page opt-in, Markdown XSS, EXIF stripped and media path/tenant checks, non-images rejected, admin permissions, unsafe links rejected, other school's content never shown | `tests/Feature/Website/PublicSiteTest.php` |
 
 ## Test coverage (Milestone 5 additions)
 | Area | File |

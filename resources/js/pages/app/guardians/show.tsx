@@ -2,12 +2,14 @@ import { Form, Head, Link } from '@inertiajs/react';
 import GuardianController from '@/actions/App/Modules/People/Http/Controllers/GuardianController';
 import { FormSection, TextareaField, TextField } from '@/components/shared/fields';
 import { PageHeader } from '@/components/shared/page-header';
+import { PortalAccess } from '@/components/shared/portal-access';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useT } from '@/lib/i18n';
 import { dashboard } from '@/routes';
 import { index } from '@/routes/guardians';
+import { destroy as portalDestroy, store as portalStore } from '@/routes/guardians/portal';
 import { show as studentShow } from '@/routes/students';
 
 type Props = {
@@ -17,9 +19,10 @@ type Props = {
         students: { id: number; full_name: string; name_bn: string | null; admission_no: string; status: string; relationship: string }[];
     };
     can: { update: boolean };
+    portal: { status: string | null } | null;
 };
 
-export default function GuardianShow({ guardian, can }: Props) {
+export default function GuardianShow({ guardian, can, portal }: Props) {
     const t = useT();
 
     return (
@@ -60,6 +63,9 @@ export default function GuardianShow({ guardian, can }: Props) {
                         </ul>
                     </section>
                 </div>
+                {portal && (
+                    <PortalAccess kind="parent" status={portal.status} hasEmail={!!guardian.email} inviteUrl={portalStore(guardian.id).url} disableUrl={portalDestroy(guardian.id).url} />
+                )}
             </div>
         </>
     );

@@ -28,7 +28,7 @@ class Student extends Model
     use BelongsToSchool, SoftDeletes;
 
     protected $fillable = [
-        'full_name', 'name_bn', 'date_of_birth', 'gender', 'blood_group', 'religion', 'nationality',
+        'full_name', 'name_bn', 'date_of_birth', 'gender', 'blood_group', 'religion', 'nationality', 'email',
         'birth_registration_no', 'present_address', 'permanent_address', 'admission_date',
     ];
 

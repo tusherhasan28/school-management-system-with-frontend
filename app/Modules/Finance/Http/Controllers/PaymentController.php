@@ -72,7 +72,7 @@ class PaymentController extends Controller
 
         $allocations = isset($data['allocations']) ? array_filter(array_map(fn ($v) => $v === null ? null : Money::format(Money::parse((string) $v)), $data['allocations'])) : null;
         $receivedAt = isset($data['received_on']) && $data['received_on'] !== CarbonImmutable::now($tz)->toDateString()
-            ? CarbonImmutable::parse($data['received_on'], $tz)->setTime(12, 0)
+            ? CarbonImmutable::parse($data['received_on'], $tz)->setTime(12, 0)->utc()
             : now();
 
         $payment = $this->payments->record($student, [

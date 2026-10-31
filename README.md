@@ -8,8 +8,9 @@ schools.
 **Status:** Milestones 1 (foundation and tenancy), 2 (school setup and people),
 3 (academic operations: teacher assignments, timetable, calendar, attendance, homework)
 4 (examinations: configurable grading, marks entry, versioned results, bilingual
-report cards) and 5 (fees: invoices, payments, receipts, reversals, reports, online
-payment architecture) complete. See
+report cards), 5 (fees: invoices, payments, receipts, reversals, reports, online
+payment architecture) and 6 (public school websites, parent/student portals, teacher
+dashboard, notices) complete. See
 [`docs/roadmap.md`](docs/roadmap.md) for what is built and what comes next.
 
 ## Stack
@@ -53,6 +54,8 @@ then `php artisan serve` and open, for example, `http://dhaka-model.schoolsaas.t
 | `dhaka-model.schoolsaas.test/login` | `principal@dhaka-model.test` |
 | `dhaka-model.schoolsaas.test/login` (class teacher of 6-A, Math for Class 6) | `salma@dhaka-model.test` |
 | `dhaka-model.schoolsaas.test/login` (Accountant) | `accounts@dhaka-model.test` |
+| `dhaka-model.schoolsaas.test/login` (parent of Ayesha and Nusrat) | `parent@dhaka-model.test` |
+| `dhaka-model.schoolsaas.test/login` (student Tanvir) | `student@dhaka-model.test` |
 | `ctg-madrasa.schoolsaas.test/login` | `principal@ctg-madrasa.test` |
 
 Dhaka Model School is seeded with a finished setup (session 2026, classes 1–10 with
@@ -60,8 +63,9 @@ sections A/B, subjects), four students (two siblings sharing a guardian), a teac
 with class-teacher and subject assignments, a Sunday–Thursday timetable, two holidays,
 one homework, a published Half-Yearly exam for Class 6 (results and report cards), a
 draft Annual exam, fee plans with September–November invoices and payments (one family
-overdue with late fees), and one admission application. A pending school registration waits in the platform admin.
-The public admission form is at `dhaka-model.schoolsaas.test/admission`.
+overdue with late fees), a published bilingual website (pages, notices for each
+audience, events, a generated photo album), parent and student portal logins, and one admission application. A pending school registration waits in the platform admin.
+The public website is at `dhaka-model.schoolsaas.test` (add `?lang=en` for English) and the admission form at `/admission`.
 
 ### Useful commands
 ```bash

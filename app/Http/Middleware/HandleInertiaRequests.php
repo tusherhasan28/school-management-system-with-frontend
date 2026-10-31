@@ -60,6 +60,12 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $user ? fn () => $user->getAllPermissions()->pluck('name')->values() : [],
                 // Linked to an active staff record (teachers get "My timetable").
                 'isStaff' => $user ? fn () => \App\Modules\People\Models\StaffMember::query()->where('user_id', $user->id)->where('status', 'active')->exists() : false,
+                // Which area this login belongs to (staff, teacher, parent, student): picks the layout.
+                'area' => $user ? fn () => app(\App\Modules\Portal\Services\PortalAccess::class)->area($user) : null,
+                // Parent portal child switcher: the guardian's own linked children only.
+                'children' => $user ? fn () => $user->hasRole('Parent')
+                    ? app(\App\Modules\Portal\Services\PortalAccess::class)->children($user)->map(fn ($s) => ['id' => $s->id, 'name' => $s->full_name, 'name_bn' => $s->name_bn])->values()
+                    : [] : [],
                 'platformUser' => $platformUser ? [
                     'id' => $platformUser->id,
                     'name' => $platformUser->name,

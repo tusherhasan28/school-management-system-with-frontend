@@ -129,7 +129,7 @@ class StudentController extends Controller
 
         return Inertia::render('app/students/show', [
             'student' => [
-                ...$student->only(['id', 'admission_no', 'full_name', 'name_bn', 'gender', 'blood_group', 'religion', 'nationality', 'present_address', 'permanent_address', 'status']),
+                ...$student->only(['id', 'admission_no', 'full_name', 'name_bn', 'gender', 'blood_group', 'religion', 'nationality', 'email', 'present_address', 'permanent_address', 'status']),
                 'date_of_birth' => $student->date_of_birth?->toDateString(),
                 'admission_date' => $student->admission_date?->toDateString(),
                 // Masked unless the viewer may edit the record.
@@ -162,6 +162,7 @@ class StudentController extends Controller
                 'changeStatus' => $user->can('changeStatus', $student),
                 'manageGuardians' => $user->can('update', $student) && $user->can('guardians.manage'),
             ],
+            'portal' => $user->can('users.manage') ? ['status' => app(\App\Modules\Portal\Services\PortalAccounts::class)->status($student)] : null,
         ]);
     }
 
@@ -210,7 +211,7 @@ class StudentController extends Controller
 
         return Inertia::render('app/students/form', [
             'student' => [
-                ...$student->only(['id', 'admission_no', 'full_name', 'name_bn', 'gender', 'blood_group', 'religion', 'nationality', 'present_address', 'permanent_address']),
+                ...$student->only(['id', 'admission_no', 'full_name', 'name_bn', 'gender', 'blood_group', 'religion', 'nationality', 'email', 'present_address', 'permanent_address']),
                 'date_of_birth' => $student->date_of_birth?->toDateString(),
                 'admission_date' => $student->admission_date?->toDateString(),
                 'has_birth_registration_no' => $student->birth_registration_no !== null,

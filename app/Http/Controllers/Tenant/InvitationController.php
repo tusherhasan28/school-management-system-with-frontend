@@ -49,6 +49,6 @@ class InvitationController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('invitation.accepted')]);
 
-        return to_route('dashboard');
+        return redirect()->route('portal.home');
     }
 }

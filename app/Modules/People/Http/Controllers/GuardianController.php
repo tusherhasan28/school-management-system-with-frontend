@@ -45,6 +45,7 @@ class GuardianController extends Controller
                 ]),
             ],
             'can' => ['update' => $request->user()->can('update', $guardian)],
+            'portal' => $request->user()->can('users.manage') ? ['status' => app(\App\Modules\Portal\Services\PortalAccounts::class)->status($guardian)] : null,
         ]);
     }
 

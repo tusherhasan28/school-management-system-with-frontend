@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import MarketingLayout from '@/layouts/marketing-layout';
 import PlatformLayout from '@/layouts/platform-layout';
+import PortalLayout from '@/layouts/portal-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -22,6 +23,9 @@ void createInertiaApp({
             case name === 'app/fees/invoice-print':
             case name.startsWith('tenant/public/'):
                 return null;
+            case name === 'portal/student':
+            case name === 'portal/no-children':
+                return PortalLayout;
             case name.startsWith('platform/'):
                 return PlatformLayout;
             case name.startsWith('auth/'):

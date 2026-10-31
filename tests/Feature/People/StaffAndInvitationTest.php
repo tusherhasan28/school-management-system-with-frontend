@@ -48,7 +48,7 @@ class StaffAndInvitationTest extends TenantTestCase
         $this->get(route('invitation.show', $token))->assertInertia(fn ($p) => $p->component('auth/accept-invitation')->where('valid', true)->where('email', 'new@example.com'));
 
         $this->post(route('invitation.accept', $token), ['password' => 'Str0ng-Password!', 'password_confirmation' => 'Str0ng-Password!'])
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('portal.home'));
 
         $this->assertAuthenticatedAs($user->fresh());
         $this->assertSame('active', $user->fresh()->status);
