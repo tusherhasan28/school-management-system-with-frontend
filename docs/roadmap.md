@@ -128,9 +128,10 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - ✅ Bangla in printed PDFs verified: receipt and report card printed to PDF through Chromium embed Hind Siliguri with correct conjuncts
 - ✅ Pilot onboarding: `school:readiness <slug>` go-live checklist and `docs/pilot-onboarding.md`
 - ✅ Production deployment guide (`docs/deployment.md`) with nginx (wildcard subdomains + wildcard TLS), php-fpm, Horizon supervisor, cron, `scripts/deploy.sh` and a go-live checklist
-- ✅ Shared hosting support (cPanel + Cloudflare): runs without Redis (database sessions, cache, locks and queue), queue worker started by cron, `TRUSTED_PROXIES=cloudflare`, `ops:preflight` installation check, upload-ready release zip (`scripts/build-release.sh`), `scripts/cpanel-update.sh` with rollback, and a step-by-step guide (`docs/install-cpanel.md`) — rehearsed on Apache + per-user PHP-FPM with Redis stopped
+- ✅ Shared hosting support (cPanel + Cloudflare): runs without Redis (database sessions, cache, locks and queue), queue worker started by cron, `TRUSTED_PROXIES=cloudflare`, `ops:preflight` installation check, upload-ready release zip (`scripts/build-release.sh`), `scripts/update.sh` with rollback, and a step-by-step guide (`docs/install-cpanel.md`) — rehearsed on Apache + per-user PHP-FPM with Redis stopped
+- ✅ Hostinger shared hosting: guide (`docs/install-hostinger.md`) for hPanel, MariaDB and shell-less cron; per-school subdomains with an admin reminder (`TENANCY_MANUAL_SUBDOMAINS`); `public_html` link or copy (`scripts/publish-public.sh`); full test suite passes on **MariaDB 10.11** as well as MySQL 8; install, backup/restore and update rehearsed in a Hostinger-style layout
 - ✅ Queue `retry_after` raised above the longest job (30 min export) so a running import/export is never picked up twice
-- ✅ 324 automated tests (22 new for this milestone)
+- ✅ 325 automated tests (23 new for this milestone), passing on MySQL 8.0 and MariaDB 10.11
 
 ## Known limitations after Milestone 8
 - No online gateway adapter is installed: bKash, Nagad, Rocket and SSLCommerz need merchant credentials and current official documentation (open question 4). Mobile-banking payments are recorded manually with their transaction ID.
@@ -165,6 +166,7 @@ Status legend: ✅ done and tested · 🟡 partly done · ⬜ not started
 - Wayfinder output (`resources/js/actions`, `routes`) is generated, not committed — run `php artisan wayfinder:generate --with-form` or `npm run build`.
 - Restore drill and load test were run in the development sandbox; repeat both on the production server before the first pilot school goes live (checklist in `docs/deployment.md`).
 - Two-factor login is optional for school staff (`school:readiness` warns) and not available for the platform admin login yet; no external penetration test yet; no error tracker bundled.
+- On Hostinger shared hosting (no wildcard subdomains) each new school's subdomain is added by hand in hPanel and its SSL must become active before the school can open its site.
 - Restoring a single school from a backup is a careful manual procedure, not a button (`docs/operations.md`).
 - `composer audit` could only use cached package metadata in the sandbox; re-run it on a normal network.
 - `composer.lock` was resolved from GitHub sources in an offline-from-Packagist sandbox. On a normal machine run `composer update` once to refresh dist URLs; versions stay within the same constraints.

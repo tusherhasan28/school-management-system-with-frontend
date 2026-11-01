@@ -15,7 +15,11 @@
 set -euo pipefail
 umask 077
 
-ENV_FILE="${BACKUP_ENV_FILE:-/etc/school-saas/backup.env}"
+# Settings: $BACKUP_ENV_FILE, else ~/.school-saas/backup.env (shared hosting,
+# where cron cannot set variables), else /etc/school-saas/backup.env.
+if [[ -n "${BACKUP_ENV_FILE:-}" ]]; then ENV_FILE="$BACKUP_ENV_FILE"
+elif [[ -n "${HOME:-}" && -f "$HOME/.school-saas/backup.env" ]]; then ENV_FILE="$HOME/.school-saas/backup.env"
+else ENV_FILE="/etc/school-saas/backup.env"; fi
 if [[ -f "$ENV_FILE" ]]; then
   # shellcheck disable=SC1090
   set -a; . "$ENV_FILE"; set +a

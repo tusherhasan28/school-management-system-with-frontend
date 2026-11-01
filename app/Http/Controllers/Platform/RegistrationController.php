@@ -34,8 +34,12 @@ class RegistrationController extends Controller
     public function approve(Request $request, SchoolRegistration $registration): RedirectResponse
     {
         $data = $request->validate(['slug' => ['nullable', 'string', 'min:3', 'max:63', 'regex:/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])$/']]);
-        $this->registrations->approve($registration, $data['slug'] ?? null);
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('registration.approved')]);
+        $school = $this->registrations->approve($registration, $data['slug'] ?? null);
+        $message = __('registration.approved');
+        if (config('tenancy.manual_subdomains')) {
+            $message .= ' '.__('registration.add_subdomain', ['host' => $school->slug.'.'.config('tenancy.domain')]);
+        }
+        Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
 
         return back();
     }

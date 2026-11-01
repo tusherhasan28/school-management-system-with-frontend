@@ -77,8 +77,15 @@ class OpsPreflight extends Command
             preg_match('/^(\d+\.\d+)/', $version, $m);
             $ok = $maria ? version_compare($m[1] ?? '0', '10.6', '>=') : version_compare($m[1] ?? '0', '8.0', '>=');
             $this->add($ok, 'Database server', $version.($maria ? ' (MariaDB 10.6+)' : ' (MySQL 8.0+)'));
+            // Tables are created as utf8mb4 explicitly; a different database
+            // default only matters for tables created outside migrations.
             $charset = (string) DB::selectOne('select @@character_set_database as c')->c;
-            $this->add($charset === 'utf8mb4', 'Database character set', $charset.' (utf8mb4 needed for Bangla)');
+            $nonUtf8 = (int) DB::selectOne(
+                "select count(*) as c from information_schema.tables where table_schema = database()
+                 and table_type = 'BASE TABLE' and table_collation not like 'utf8mb4%'"
+            )->c;
+            $this->add($nonUtf8 === 0, 'Tables use utf8mb4 (Bangla)', $nonUtf8 === 0 ? 'yes' : "{$nonUtf8} table(s) are not utf8mb4");
+            $this->add($charset === 'utf8mb4', 'Database default character set', $charset.($charset === 'utf8mb4' ? '' : ' — fine for this app; utf8mb4 recommended'), warn: true);
 
             $pending = $this->pendingMigrations();
             $this->add($pending === 0, 'Migrations', $pending === 0 ? 'up to date' : "{$pending} pending — php artisan migrate --force");

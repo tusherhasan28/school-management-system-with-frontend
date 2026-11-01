@@ -322,7 +322,7 @@ school office. Schools can also register themselves at
 Upload the new release zip to your home folder, then:
 
 ```bash
-~/school-saas/scripts/cpanel-update.sh ~/school-saas-<new-version>.zip
+~/school-saas/scripts/update.sh ~/school-saas-<new-version>.zip
 ```
 
 It backs up, shows a maintenance page, unpacks the new version, keeps `.env`

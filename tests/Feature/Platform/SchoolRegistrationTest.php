@@ -63,6 +63,20 @@ class SchoolRegistrationTest extends TestCase
         $this->assertSame(0, SchoolRegistration::query()->count());
     }
 
+    public function test_approval_reminds_to_add_the_subdomain_on_hosts_without_wildcards(): void
+    {
+        Notification::fake();
+        config(['tenancy.manual_subdomains' => true]);
+        $registration = SchoolRegistration::create($this->form(['requested_slug' => 'khulna-high']));
+
+        $this->actingAs(PlatformUser::factory()->create(), 'platform')
+            ->post($this->platformUrl('/platform/registrations/'.$registration->id.'/approve'))
+            ->assertSessionHasNoErrors();
+
+        $flash = session(\Inertia\Support\SessionKey::FLASH_DATA);
+        $this->assertStringContainsString('khulna-high.'.config('tenancy.domain'), json_encode($flash, JSON_UNESCAPED_SLASHES));
+    }
+
     public function test_approval_provisions_a_trial_school_and_invites_the_contact(): void
     {
         Notification::fake();

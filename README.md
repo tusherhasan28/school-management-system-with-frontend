@@ -25,7 +25,7 @@ MySQL 8 · Redis + Horizon · Spatie Permission (teams) · Fortify · Recharts �
 - [Data dictionary](docs/data-dictionary.md)
 - [Review of the baseline SQL schema](docs/schema-review.md)
 - [Roadmap, checklist and known limitations](docs/roadmap.md)
-- **[Install on cPanel shared hosting + Cloudflare](docs/install-cpanel.md)** · [Production deployment guide (VPS)](docs/deployment.md) · [Operations: backups, restore, monitoring](docs/operations.md)
+- **[Install on Hostinger shared hosting + Cloudflare](docs/install-hostinger.md)** · [Install on cPanel shared hosting + Cloudflare](docs/install-cpanel.md) · [Production deployment guide (VPS)](docs/deployment.md) · [Operations: backups, restore, monitoring](docs/operations.md)
 - [Pilot school onboarding](docs/pilot-onboarding.md) · [Security and isolation review](docs/security-review.md) · [Performance and load test](docs/performance.md)
 
 ## Local setup
@@ -98,7 +98,7 @@ php artisan schedule:work        # local scheduler: late fees and billing:run (d
   or per-school encrypted integration settings (Milestone 5/7).
 - The seeder refuses to run outside `local`/`testing`.
 - Shared hosting: `scripts/build-release.sh` makes an upload-ready zip (vendor +
-  built assets); install with [docs/install-cpanel.md](docs/install-cpanel.md),
-  update with `scripts/cpanel-update.sh`.
+  built assets); install with [docs/install-hostinger.md](docs/install-hostinger.md) or [docs/install-cpanel.md](docs/install-cpanel.md),
+  update with `scripts/update.sh`.
 - Full VPS guide: [docs/deployment.md](docs/deployment.md) (nginx, php-fpm, Horizon,
   cron, `scripts/deploy.sh`, encrypted backups with `scripts/backup.sh`, go-live checklist).

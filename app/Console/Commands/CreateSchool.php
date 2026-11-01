@@ -48,6 +48,9 @@ class CreateSchool extends Command
         }
 
         $this->info("School created: {$school->url()}");
+        if (config('tenancy.manual_subdomains')) {
+            $this->warn("Add the subdomain {$school->slug}.".config('tenancy.domain').' in your hosting panel (same folder as the main domain), then wait for its SSL certificate.');
+        }
 
         return self::SUCCESS;
     }

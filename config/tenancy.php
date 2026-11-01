@@ -10,6 +10,13 @@ return [
 
     'admin_subdomain' => env('TENANCY_ADMIN_SUBDOMAIN', 'admin'),
 
+    /*
+    | true on hosts without wildcard subdomains (e.g. Hostinger shared): every
+    | new school's subdomain must be added in the hosting panel, pointing to
+    | the app folder. The platform reminds you when a school is created.
+    */
+    'manual_subdomains' => (bool) env('TENANCY_MANUAL_SUBDOMAINS', false),
+
     // Interface language of the platform admin area.
     'platform_locale' => env('TENANCY_PLATFORM_LOCALE', 'en'),
 
